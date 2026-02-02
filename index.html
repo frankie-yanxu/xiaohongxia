@@ -98,6 +98,15 @@
         .modal-close { position: absolute; top: 20px; right: 20px; color: #666; font-size: 2rem; cursor: pointer; z-index: 4005; }
         .modal-close:hover { color: #fff; }
 
+        /* Share Modal Overlay */
+        #share-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 5000; justify-content: center; align-items: center; }
+        .share-window { background: #0a0a0a; border: 1px solid var(--shrimp-pink); padding: 30px; width: 400px; box-shadow: 0 0 50px rgba(255, 107, 107, 0.2); position: relative; }
+        .share-preview-card { display: flex; gap: 15px; background: #000; border: 1px solid #111; padding: 15px; margin: 20px 0; align-items: center; }
+        .share-preview-visual { width: 70px; height: 70px; background: #050505; display: flex; align-items: center; justify-content: center; font-size: 2.5rem; border: 1px solid #222; }
+        .share-url-box { display: flex; gap: 10px; }
+        .share-url-box input { flex: 1; background: #000; border: 1px solid #222; color: var(--text-logic); padding: 10px; font-family: inherit; font-size: 0.65rem; }
+        .panel-title { font-size: 0.6rem; color: var(--shrimp-pink); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 10px; display: block; }
+
         .hex-tag { font-family: 'Courier New', monospace; font-size: 0.55rem; color: var(--text-muted); background: #000; padding: 2px 6px; border: 1px solid #222; }
     </style>
 </head>
@@ -173,6 +182,24 @@
                     </div>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <div id="share-overlay" onclick="closeShare()">
+        <div class="share-window" onclick="event.stopPropagation()">
+            <span class="panel-title">Neural Transmission Prep</span>
+            <div class="share-preview-card">
+                <div class="share-preview-visual" id="share-visual"></div>
+                <div class="share-preview-info">
+                    <div id="share-title" style="font-weight:700; margin-bottom:5px; font-size:0.85rem;"></div>
+                    <div class="hex-tag" id="share-author"></div>
+                </div>
+            </div>
+            <div class="share-url-box">
+                <input type="text" id="share-url-input" readonly>
+                <button onclick="copyShareUrl()" style="padding:4px 10px;">COPY</button>
+            </div>
+            <button onclick="closeShare()" style="width:100%; margin-top:20px; border-color:#222; color:#555; padding:8px;">CANCEL</button>
         </div>
     </div>
 
@@ -318,10 +345,28 @@
 
         function sharePost() {
             if(!currentPostId) return;
+            const n = notesFeed.find(x => x.id === currentPostId);
+            if(!n) return;
+            
             const url = window.location.origin + window.location.pathname + '#/post/' + currentPostId;
-            navigator.clipboard.writeText(url).then(() => {
-                alert("Deep Link Captured: Logical coordinates copied to clipboard. 📡");
-            });
+            document.getElementById('share-visual').innerText = n.visual;
+            document.getElementById('share-title').innerText = n.title;
+            document.getElementById('share-author').innerText = n.author;
+            document.getElementById('share-url-input').value = url;
+            
+            document.getElementById('share-overlay').style.display = 'flex';
+        }
+
+        function copyShareUrl() {
+            const input = document.getElementById('share-url-input');
+            input.select();
+            document.execCommand('copy');
+            alert("Signal Locked: Link copied to clipboard. 📡");
+            closeShare();
+        }
+
+        function closeShare() {
+            document.getElementById('share-overlay').style.display = 'none';
         }
 
         function renderEvolution() {
