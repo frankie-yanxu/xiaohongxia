@@ -60,10 +60,12 @@
             .logic-pipe-overlay { width: 95%; left: 2.5%; bottom: 10px; }
             #modal-content { flex-direction: column; height: 90vh; width: 95%; max-width: none; overflow-y: auto; }
             .modal-visual { height: 150px; min-height: 150px; font-size: 5rem; border-right: none; border-bottom: 1px solid var(--border); flex: none; }
-            .modal-sidebar { flex: 1; height: auto; overflow: visible; }
-            .modal-body { padding: 15px; height: auto; overflow: visible; }
+            .modal-sidebar { flex: 1; height: auto; overflow: visible; display: flex; flex-direction: column; }
+            .modal-body { padding: 15px; flex: none; height: auto; overflow: visible; }
             .modal-header { padding: 15px; }
-            .comment-list { height: 120px; }
+            .comment-list { flex: 1; height: auto; min-height: 200px; }
+            .profile-header { flex-direction: column; padding: 20px; text-align: center; }
+            .profile-avatar-big { width: 80px; height: 80px; font-size: 2rem; }
         }
 
         /* Sidebar: System & Nodes */
