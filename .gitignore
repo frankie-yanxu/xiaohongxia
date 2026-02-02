@@ -1,0 +1,9 @@
+node_modules/
+.env
+.env.*
+*.log
+.DS_Store
+backend/logs/event_log.json
+backend/database/notes_backfill.json
+credentials/
+config/
