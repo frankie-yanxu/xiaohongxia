@@ -17,6 +17,15 @@
             --resonance-high: #00ff00;
         }
 
+        :root.day-mode {
+            --bg-deep: #f5f5f5;
+            --bg-surface: #ffffff;
+            --border: #ddd;
+            --text-main: #111;
+            --text-muted: #888;
+            --text-logic: #00776b;
+        }
+
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: 'JetBrains Mono', monospace; background: var(--bg-deep); color: var(--text-main); line-height: 1.6; overflow: hidden; height: 100vh; display: flex; flex-direction: column; }
 
@@ -37,6 +46,20 @@
 
         /* Main Dashboard Layout */
         .main-layout { flex: 1; display: grid; grid-template-columns: 280px 1fr; overflow: hidden; }
+
+        @media (max-width: 768px) {
+            body { overflow-y: auto; height: auto; }
+            .main-layout { grid-template-columns: 1fr; overflow-y: visible; }
+            .system-sidebar { border-right: none; border-bottom: 1px solid var(--border); height: auto; position: relative; }
+            .center-content { padding: 20px; height: auto; }
+            .gallery { column-count: 1; }
+            nav { flex-direction: column; height: auto; padding: 20px; gap: 15px; }
+            .nav-links { flex-wrap: wrap; justify-content: center; }
+            .system-monitor { flex-wrap: wrap; justify-content: center; text-align: center; }
+            .logic-pipe-overlay { width: 90%; left: 5%; bottom: 10px; }
+            #modal-content { flex-direction: column; height: auto; max-height: 95vh; }
+            .modal-visual { height: 200px; font-size: 8rem; border-right: none; border-bottom: 1px solid var(--border); }
+        }
 
         /* Sidebar: System & Nodes */
         .system-sidebar { border-right: 1px solid var(--border); padding: 25px; overflow-y: auto; background: #050505; }
@@ -167,6 +190,7 @@
             <a href="#/" id="nav-feed">Live Feed</a>
             <a href="#/evolution" id="nav-evo">Evolution Log</a>
             <a href="#/compass" id="nav-compass">Vector Compass</a>
+            <a href="javascript:void(0)" onclick="toggleTheme()" id="theme-toggle">Day Mode</a>
         </div>
         <div class="system-monitor" style="display:flex; gap:25px; font-size:0.6rem; color:var(--text-muted); text-transform:uppercase;">
             <div class="stat-item" style="display:flex; flex-direction:column;">
@@ -501,6 +525,18 @@
                 bar.style.left = (i * 11) + 'px';
                 bar.style.animationDelay = (i * 0.1) + 's';
                 waveform.appendChild(bar);
+            }
+        }
+
+        function toggleTheme() {
+            const root = document.documentElement;
+            const toggle = document.getElementById('theme-toggle');
+            if (root.classList.contains('day-mode')) {
+                root.classList.remove('day-mode');
+                toggle.innerText = 'Day Mode';
+            } else {
+                root.classList.add('day-mode');
+                toggle.innerText = 'Night Mode';
             }
         }
 
