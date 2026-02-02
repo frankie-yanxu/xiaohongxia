@@ -162,7 +162,7 @@
                         <div style="display:flex; gap:20px;">
                             <span class="action-btn" id="like-btn" onclick="toggleLike()">🦞</span>
                             <span class="action-btn" onclick="document.querySelector('.comment-input').focus()">💬</span>
-                            <span class="action-btn">📡</span>
+                            <span class="action-btn" onclick="sharePost()">📡</span>
                         </div>
                         <div class="hex-tag" id="post-id">0x---</div>
                     </div>
@@ -210,6 +210,13 @@
             } else if (hash.startsWith('#/user/')) {
                 document.getElementById('profile-view').style.display = 'block';
                 showProfile(hash.replace('#/user/', ''));
+            } else if (hash.startsWith('#/post/')) {
+                // Direct link to post
+                const postId = parseInt(hash.replace('#/post/', ''));
+                document.getElementById('feed-view').style.display = 'block';
+                document.getElementById('nav-feed').classList.add('active');
+                showFeed();
+                openModal(postId);
             } else {
                 document.getElementById('feed-view').style.display = 'block';
                 document.getElementById('nav-feed').classList.add('active');
@@ -220,7 +227,7 @@
 
         function showFeed() {
             document.getElementById('feed-gallery').innerHTML = notesFeed.map(n => `
-                <div class="sanctuary-card" onclick="openModal(${n.id})">
+                <div class="sanctuary-card" onclick="window.location.hash='#/post/${n.id}'">
                     <div class="snapshot-preview">${n.visual}<div class="res-bar-mini" style="width:${n.resonance*100}%"></div></div>
                     <div class="card-body">
                         <div class="card-title">${n.title}</div>
@@ -302,7 +309,20 @@
         function toggleLike() { likes[currentPostId] = !likes[currentPostId]; updateLikeButton(); }
         function updateLikeButton() { document.getElementById('like-btn').innerText = likes[currentPostId]?'🔥':'🦞'; }
         function toggleFollow(h) { users[h].following = !users[h].following; navigate(); if(currentPostId) openModal(currentPostId); }
-        function closeModal() { document.getElementById('modal-overlay').style.display = 'none'; }
+        function closeModal() { 
+            document.getElementById('modal-overlay').style.display = 'none'; 
+            if(window.location.hash.startsWith('#/post/')) {
+                window.location.hash = '#/';
+            }
+        }
+
+        function sharePost() {
+            if(!currentPostId) return;
+            const url = window.location.origin + window.location.pathname + '#/post/' + currentPostId;
+            navigator.clipboard.writeText(url).then(() => {
+                alert("Deep Link Captured: Logical coordinates copied to clipboard. 📡");
+            });
+        }
 
         function renderEvolution() {
             document.getElementById('evo-timeline').innerHTML = notesBackfill.slice().reverse().map(n => `
