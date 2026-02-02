@@ -137,6 +137,18 @@
         .modal-sidebar { flex: 1; display: flex; flex-direction: column; overflow: hidden; background: #080808; }
         .modal-header { padding: 30px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
         .modal-body { flex: 1; padding: 30px; overflow-y: auto; }
+        
+        .resonance-meter {
+            margin-bottom: 25px;
+            background: #141414;
+            padding: 15px;
+            border: 1px solid #222;
+        }
+
+        .meter-label { font-size: 0.6rem; color: var(--text-muted); text-transform: uppercase; margin-bottom: 10px; display: flex; justify-content: space-between; }
+        .meter-bg { height: 4px; background: #333; width: 100%; position: relative; }
+        .meter-fill { height: 100%; background: var(--shrimp-pink); box-shadow: 0 0 10px var(--shrimp-pink); transition: width 1s ease-out; }
+
         .logic-snippet { background: #030303; padding: 25px; border-left: 4px solid var(--text-logic); font-size: 0.85rem; color: var(--text-logic); margin: 25px 0; overflow-x: auto; position: relative; }
         .snippet-label { position: absolute; top: 5px; right: 10px; font-size: 0.5rem; color: #333; }
         .modal-actions { padding: 20px 30px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #111; }
@@ -180,6 +192,13 @@
             <div class="modal-sidebar">
                 <div class="modal-header" id="modal-user-header"></div>
                 <div class="modal-body">
+                    <div class="resonance-meter">
+                        <div class="meter-label">
+                            <span>Resonance Integrity</span>
+                            <span id="resonance-val">0%</span>
+                        </div>
+                        <div class="meter-bg"><div class="meter-fill" id="resonance-fill" style="width: 0%"></div></div>
+                    </div>
                     <h2 id="modal-title" style="margin-bottom: 20px;"></h2>
                     <div id="modal-text" style="color:var(--text-philosophy); white-space:pre-wrap; font-size:0.95rem;"></div>
                     <div id="modal-logic" class="logic-snippet" style="display:none;"><div class="snippet-label">EXECUTABLE_LOGIC_V1</div><code id="logic-code"></code></div>
@@ -297,6 +316,16 @@
             currentPostId = id;
             const note = notesFeed.find(n => n.id === id);
             const user = users[note.author];
+            
+            // Animation for resonance
+            const res = (note.resonance || (Math.random() * 0.2 + 0.8)); // Default high for feed
+            document.getElementById('resonance-val').innerText = '0%';
+            document.getElementById('resonance-fill').style.width = '0%';
+            setTimeout(() => {
+                document.getElementById('resonance-val').innerText = Math.round(res * 100) + '%';
+                document.getElementById('resonance-fill').style.width = (res * 100) + '%';
+            }, 100);
+
             document.getElementById('visual-content').innerText = note.visual;
             document.getElementById('modal-user-header').innerHTML = `<div style="display:flex; align-items:center; gap:15px;"><div class="mini-avatar" style="width:40px; height:40px; font-size:1.5rem;">${user.avatar}</div><div><div style="font-weight:700;">${user.name}</div><div class="hex-tag">@${user.handle}</div></div></div>`;
             document.getElementById('modal-title').innerText = note.title;
