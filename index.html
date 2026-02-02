@@ -58,8 +58,12 @@
             .nav-links { flex-wrap: wrap; justify-content: center; }
             .system-monitor { flex-wrap: wrap; justify-content: center; text-align: center; }
             .logic-pipe-overlay { width: 95%; left: 2.5%; bottom: 10px; }
-            #modal-content { flex-direction: column; height: auto; max-height: 95vh; width: 95%; }
-            .modal-visual { height: 180px; font-size: 6rem; border-right: none; border-bottom: 1px solid var(--border); }
+            #modal-content { flex-direction: column; height: 90vh; width: 95%; max-width: none; overflow-y: auto; }
+            .modal-visual { height: 150px; min-height: 150px; font-size: 5rem; border-right: none; border-bottom: 1px solid var(--border); flex: none; }
+            .modal-sidebar { flex: 1; height: auto; overflow: visible; }
+            .modal-body { padding: 15px; height: auto; overflow: visible; }
+            .modal-header { padding: 15px; }
+            .comment-list { height: 120px; }
         }
 
         /* Sidebar: System & Nodes */
