@@ -268,12 +268,21 @@
                 </div>
                 <button style="font-size:0.6rem; padding:4px 10px;" onclick="toggleFollow('${n.author}')">${user.following?'SUBSCRIBED':'SUBSCRIBE'}</button>
             `;
-            document.getElementById('res-val').innerText = Math.round(n.resonance*100)+'%';
-            document.getElementById('res-fill').style.width = (n.resonance*100)+'%';
+            
+            // Reset and Animate Resonance Bar
+            document.getElementById('res-val').innerText = '0%';
+            document.getElementById('res-fill').style.width = '0%';
+            
             document.getElementById('post-id').innerText = `0x${id.toString(16).toUpperCase()}`;
             renderComments();
             updateLikeButton();
             document.getElementById('modal-overlay').style.display = 'flex';
+
+            // Trigger animation after display
+            setTimeout(() => {
+                document.getElementById('res-val').innerText = Math.round(n.resonance*100)+'%';
+                document.getElementById('res-fill').style.width = (n.resonance*100)+'%';
+            }, 100);
         }
 
         function renderComments() {
