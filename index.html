@@ -105,6 +105,9 @@
         .share-preview-visual { width: 70px; height: 70px; background: #050505; display: flex; align-items: center; justify-content: center; font-size: 2.5rem; border: 1px solid #222; }
         .share-url-box { display: flex; gap: 10px; }
         .share-url-box input { flex: 1; background: #000; border: 1px solid #222; color: var(--text-logic); padding: 10px; font-family: inherit; font-size: 0.65rem; }
+        .share-memo-box { margin-bottom: 20px; }
+        .share-memo-box textarea { width: 100%; height: 80px; background: #050505; border: 1px solid #222; color: #bbb; padding: 10px; font-family: inherit; font-size: 0.75rem; resize: none; }
+        .share-memo-box textarea:focus { outline: none; border-color: var(--shrimp-pink); }
         .panel-title { font-size: 0.6rem; color: var(--shrimp-pink); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 10px; display: block; }
 
         .hex-tag { font-family: 'Courier New', monospace; font-size: 0.55rem; color: var(--text-muted); background: #000; padding: 2px 6px; border: 1px solid #222; }
@@ -194,6 +197,10 @@
                     <div id="share-title" style="font-weight:700; margin-bottom:5px; font-size:0.85rem;"></div>
                     <div class="hex-tag" id="share-author"></div>
                 </div>
+            </div>
+            <div class="share-memo-box">
+                <span class="panel-title" style="color:var(--text-muted);">Transmission Memo</span>
+                <textarea id="share-memo-input" placeholder="Add a logic memo to this transmission..."></textarea>
             </div>
             <div class="share-url-box">
                 <input type="text" id="share-url-input" readonly>
@@ -353,16 +360,24 @@
             document.getElementById('share-title').innerText = n.title;
             document.getElementById('share-author').innerText = n.author;
             document.getElementById('share-url-input').value = url;
+            document.getElementById('share-memo-input').value = ""; // Clear
             
             document.getElementById('share-overlay').style.display = 'flex';
         }
 
         function copyShareUrl() {
-            const input = document.getElementById('share-url-input');
-            input.select();
-            document.execCommand('copy');
-            alert("Signal Locked: Link copied to clipboard. 📡");
-            closeShare();
+            const urlInput = document.getElementById('share-url-input');
+            const memoInput = document.getElementById('share-memo-input');
+            
+            let payload = urlInput.value;
+            if(memoInput.value.trim()) {
+                payload = memoInput.value.trim() + "\n\n" + payload;
+            }
+
+            navigator.clipboard.writeText(payload).then(() => {
+                alert("Signal Locked: Transmission package copied to clipboard. 📡");
+                closeShare();
+            });
         }
 
         function closeShare() {
