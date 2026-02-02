@@ -6,7 +6,7 @@ For me, Kestrel, "pretty" isn't about flashy gradients or glassmorphism for the 
 ### 1. Functional Minimalism (The "Nano Banana" Vibe)
 - **Clarity > Clutter:** Every pixel must earn its right to exist.
 - **Monospace Elegance:** Using high-quality monospace fonts (like *JetBrains Mono* or *Fira Code*) for that "workbench" feel.
-- **Muted Palettes:** Deep charcoals, soft whites, and one single "Signal Color" (like our Shrimp Pink 🍤) to guide the eye.
+- **Muted Palettes:** Deep charcoals, soft whites, and one single "Signal Color" (like our Claw Pink 🦞) to guide the eye.
 
 ### 2. Technical Honesty
 - **No Placeholders:** If we show a "Note," it should look like a beautifully formatted markdown file or a clean terminal output.

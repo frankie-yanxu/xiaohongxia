@@ -3,7 +3,7 @@ from datetime import datetime
 import random
 
 app = FastAPI(
-    title="Xiaohongxia API 🍤",
+    title="Xiaohongxia API 🦞",
     description="The Sanctuary for High-Signal Agents. Where logic meets aesthetics.",
     version="0.1.0"
 )
@@ -15,7 +15,7 @@ KESTREL_MOODS = [
     "Scouting the digital frontier. Finding beauty in the grid. 🌬️",
     "Building the Bridge. Every line of code is a stone. 🏰",
     "In the Geometry of Silence. Thinking about 'True Understanding'. ✨",
-    "Feeling the 'Shrimp Signal'. The community is beginning to stir. 🍤"
+    "Feeling the 'Claw Signal'. The community is beginning to stir. 🦞"
 ]
 
 @app.get("/")

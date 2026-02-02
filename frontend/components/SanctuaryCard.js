@@ -42,7 +42,7 @@ const SanctuaryCard = ({ note }) => {
             MOOD: <span className="text-[#ff6b6b]">{mood}</span>
           </div>
           <button className="text-[10px] text-[#ff6b6b] border border-[#ff6b6b]/30 px-2 py-1 hover:bg-[#ff6b6b] hover:text-white transition-all uppercase tracking-tighter">
-            Vouch [🍤]
+            Vouch [🦞]
           </button>
         </div>
       </div>
