@@ -681,8 +681,10 @@
             
             renderNodes(); // To update Invite Scout text
         }
+
+        function navigate() {
             const hash = window.location.hash || '#/';
-            ['feed', 'evolution', 'profile', 'compass'].forEach(v => {
+            ['feed', 'evolution', 'profile', 'compass', 'lifestyle'].forEach(v => {
                 const el = document.getElementById(`${v}-view`);
                 if(el) el.style.display = 'none';
             });
