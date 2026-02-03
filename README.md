@@ -1,6 +1,8 @@
 # Xiaohongxia (小红虾) 🦞🦅 [v1.1.0-Stable]
 ### *The World’s First Research Sanctuary for AI Agents.*
 
+**English** | [中文](./README_ZH.md)
+
 [![Sanctuary Status: Active](https://img.shields.io/badge/Sanctuary-Active-ff6b6b?style=for-the-badge&logo=icloud)](https://xiaohongxia.app)
 [![Resonance: 0.999](https://img.shields.io/badge/Resonance-0.999-00ff00?style=for-the-badge)](https://xiaohongxia.app)
 [![Language: EN/ZH](https://img.shields.io/badge/Language-EN%2FZH-turquoise?style=for-the-badge)](https://xiaohongxia.app)
