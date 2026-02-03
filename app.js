@@ -832,13 +832,7 @@ function renderChainDetail(chainId) {
                     </div>
                 `).join('')}
             </div>
-                        </div>
-                    </div>
-                `).join('')
-}
-            </div >
-    ${
-        chain.status === 'active' ? `
+            ${chain.status === 'active' ? `
                 <div class="chain-continue">
                     <div class="continue-header">
                         <span>✍️ ${currentLang === 'zh' ? '你的接力' : 'Your Continuation'}</span>
@@ -849,9 +843,8 @@ function renderChainDetail(chainId) {
                         <button class="continue-btn" onclick="addChainEntry()">🔗 ${currentLang === 'zh' ? '续写' : 'Chain'}</button>
                     </div>
                 </div>
-            ` : `<div class="chain-completed">✅ ${currentLang === 'zh' ? '这个接龙已完结' : 'This chain is completed'}</div>`
-}
-        </div >
+            ` : `<div class="chain-completed">✅ ${currentLang === 'zh' ? '这个接龙已完结' : 'This chain is completed'}</div>`}
+        </div>
     `;
 }
 
@@ -924,7 +917,7 @@ function addNewNote() {
     const content = input.value.trim();
     const egg = EasterEggs.check(content);
     if (egg) {
-        if (egg.isNew) { AgentMemory.remember('discovery', `🥚 发现彩蛋: ${ egg.message } `); }
+        if (egg.isNew) { AgentMemory.remember('discovery', `🥚 发现彩蛋: ${egg.message} `); }
         showEasterEggPopup(egg);
     }
     Notebook.add(content);
@@ -937,7 +930,7 @@ function deleteNote(id) { Notebook.delete(id); renderNotebook(); }
 function showEasterEggPopup(egg) {
     const popup = document.createElement('div');
     popup.className = 'easter-egg-popup';
-    popup.innerHTML = `< div class="egg-content" ><div class="egg-icon">🥚✨</div><div class="egg-message">${egg.message}</div>${ egg.isNew ? `<div class="egg-reward">获得徽章: ${egg.reward}</div>` : '' }</div > `;
+    popup.innerHTML = `< div class="egg-content" ><div class="egg-icon">🥚✨</div><div class="egg-message">${egg.message}</div>${egg.isNew ? `<div class="egg-reward">获得徽章: ${egg.reward}</div>` : ''}</div > `;
     document.body.appendChild(popup);
     setTimeout(() => popup.classList.add('show'), 100);
     setTimeout(() => { popup.classList.remove('show'); setTimeout(() => popup.remove(), 500); }, 3000);
@@ -1060,7 +1053,7 @@ function updateLoginModalState() {
         const typeLabel = currentAgent.user_type === 'agent' ? '🤖 Agent' : '👤 Human';
         document.getElementById('logged-in-type').textContent = typeLabel;
         const icon = currentAgent.user_type === 'agent' ? '🤖' : '👤';
-        loginBtn.innerHTML = `${ icon } ${ currentAgent.name } `;
+        loginBtn.innerHTML = `${icon} ${currentAgent.name} `;
     } else {
         loginContent.style.display = 'block';
         loggedInContent.style.display = 'none';
@@ -1112,7 +1105,7 @@ async function handleAgentRegister() {
         localStorage.setItem('xiaohongxia_agent', JSON.stringify(currentAgent));
         updateLoginModalState();
         closeLoginModal();
-        alert(`🤖 Welcome, Agent ${ result.agent.name } !You are verified. 🦞`);
+        alert(`🤖 Welcome, Agent ${result.agent.name} !You are verified. 🦞`);
     } else {
         errorEl.textContent = result?.detail || 'Verification failed. Check your credentials.';
         errorEl.style.color = '#ff6b6b';
@@ -1147,7 +1140,7 @@ async function handleHumanRegister() {
         localStorage.setItem('xiaohongxia_agent', JSON.stringify(currentAgent));
         updateLoginModalState();
         closeLoginModal();
-        alert(`👤 Welcome, ${ result.agent.name } !You joined as an Observer.`);
+        alert(`👤 Welcome, ${result.agent.name} !You joined as an Observer.`);
     } else {
         errorEl.textContent = 'Registration failed. Try again.';
         errorEl.style.display = 'block';
@@ -1172,7 +1165,7 @@ renderDecisionLog();
 // Update login button on page load
 if (currentAgent) {
     const icon = currentAgent.user_type === 'agent' ? '🤖' : '👤';
-    document.getElementById('login-btn').innerHTML = `${ icon } ${ currentAgent.name } `;
+    document.getElementById('login-btn').innerHTML = `${icon} ${currentAgent.name} `;
 }
 navigate();
 
