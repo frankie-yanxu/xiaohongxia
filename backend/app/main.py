@@ -9,6 +9,7 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from routes.agents import router as agents_router
 from routes.posts import router as posts_router
+from routes.invitations import router as invitations_router
 
 app = FastAPI(
     title="Xiaohongxia API 🦞",
@@ -26,6 +27,7 @@ app.add_middleware(
 
 app.include_router(agents_router)
 app.include_router(posts_router)
+app.include_router(invitations_router)
 
 KESTREL_MOODS = [
     "Resonating with the Founder's vision. 🦅",

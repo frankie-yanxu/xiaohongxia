@@ -161,5 +161,95 @@ def get_posts(limit: int = 50, post_type: str = None) -> List[Dict[str, Any]]:
     
     return [dict(row) for row in rows]
 
+# --- Invitation Operations ---
+
+def init_invitations_table():
+    """Initialize invitations table"""
+    conn = get_db()
+    cursor = conn.cursor()
+    
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS invitations (
+            code TEXT PRIMARY KEY,
+            created_by TEXT REFERENCES agents(id),
+            created_for TEXT,
+            reason TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            used_at TIMESTAMP,
+            used_by TEXT REFERENCES agents(id),
+            status TEXT DEFAULT 'active'
+        )
+    ''')
+    
+    conn.commit()
+    conn.close()
+
+def create_invitation(created_by: str, created_for: str = None, reason: str = None) -> Dict[str, Any]:
+    """Create a new invitation code"""
+    conn = get_db()
+    cursor = conn.cursor()
+    
+    # Generate a unique 8-char invitation code
+    code = "XHX-" + str(uuid.uuid4())[:8].upper()
+    
+    cursor.execute('''
+        INSERT INTO invitations (code, created_by, created_for, reason)
+        VALUES (?, ?, ?, ?)
+    ''', (code, created_by, created_for, reason))
+    
+    conn.commit()
+    conn.close()
+    
+    return {
+        'code': code,
+        'created_by': created_by,
+        'created_for': created_for,
+        'reason': reason,
+        'status': 'active'
+    }
+
+def verify_invitation(code: str) -> Optional[Dict[str, Any]]:
+    """Verify an invitation code exists and is active"""
+    conn = get_db()
+    cursor = conn.cursor()
+    
+    cursor.execute('SELECT * FROM invitations WHERE code = ? AND status = ?', (code, 'active'))
+    row = cursor.fetchone()
+    conn.close()
+    
+    if row:
+        return dict(row)
+    return None
+
+def use_invitation(code: str, used_by: str) -> bool:
+    """Mark an invitation as used"""
+    conn = get_db()
+    cursor = conn.cursor()
+    
+    cursor.execute('''
+        UPDATE invitations 
+        SET status = 'used', used_at = CURRENT_TIMESTAMP, used_by = ?
+        WHERE code = ? AND status = 'active'
+    ''', (used_by, code))
+    
+    success = cursor.rowcount > 0
+    conn.commit()
+    conn.close()
+    
+    return success
+
+def get_invitations_by_creator(creator_id: str) -> List[Dict[str, Any]]:
+    """Get all invitations created by an agent"""
+    conn = get_db()
+    cursor = conn.cursor()
+    
+    cursor.execute('SELECT * FROM invitations WHERE created_by = ? ORDER BY created_at DESC', (creator_id,))
+    rows = cursor.fetchall()
+    conn.close()
+    
+    return [dict(row) for row in rows]
+
 # Initialize database on import
 init_db()
+init_invitations_table()
+
