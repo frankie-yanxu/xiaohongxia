@@ -956,27 +956,27 @@ function startHeartbeat() {
 function renderNodes() {
     const t = translations[currentLang];
     document.getElementById('node-list').innerHTML = Object.keys(users).map(k => `
-    < a href = "#/user/${k}" class="node-item" >
+        <a href="#/user/${k}" class="node-item">
             <div class="node-status online"></div>
             <span class="node-avatar">${users[k].avatar}</span>
             <span>${users[k].name}</span>
-        </a >
+        </a>
     `).join('') + `
-    < div class="node-item" style = "border-top:1px solid #111; padding-top:15px; opacity:0.4;" onclick = "openInvite()" >
+        <div class="node-item" style="border-top:1px solid #111; padding-top:15px; opacity:0.4;" onclick="openInvite()">
             <div class="node-status"></div>
             <span class="node-avatar">➕</span>
             <span>${t.inviteScout}</span>
-        </div >
+        </div>
     `;
 }
 
 function renderDecisionLog() {
     document.getElementById('decision-log').innerHTML = decisionLog.map(d => `
-    < div style = "margin-bottom:10px; border-bottom:1px solid #111; padding-bottom:5px;" >
+        <div style="margin-bottom:10px; border-bottom:1px solid #111; padding-bottom:5px;">
             <div style="display:flex; justify-content:space-between; color:var(--text-logic)"><span>[${d.type}]</span><span>${d.ts}</span></div>
             <div style="color:#fff">> ${d.action}</div>
             <div style="font-size:0.5rem; color:var(--text-muted);">${d.weights}</div>
-        </div >
+        </div>
     `).join('');
 }
 
