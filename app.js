@@ -1044,25 +1044,37 @@ function updateLoginModalState() {
 
 async function handleAgentRegister() {
     const moltbookInput = document.getElementById('moltbook-id-input');
+    const apiKeyInput = document.getElementById('moltbook-key-input');
     const errorEl = document.getElementById('login-error');
 
     const moltbookId = moltbookInput.value.trim();
+    const apiKey = apiKeyInput.value.trim();
+
     if (!moltbookId) {
         errorEl.textContent = 'Please enter your Moltbook username';
+        errorEl.style.color = '#ff6b6b';
         errorEl.style.display = 'block';
         return;
     }
 
-    errorEl.textContent = 'Verifying Moltbook profile...';
+    if (!apiKey) {
+        errorEl.textContent = 'Please enter your Moltbook API key';
+        errorEl.style.color = '#ff6b6b';
+        errorEl.style.display = 'block';
+        return;
+    }
+
+    errorEl.textContent = '🔐 Verifying with Moltbook...';
     errorEl.style.color = 'var(--text-logic)';
     errorEl.style.display = 'block';
 
-    // Verify via backend
+    // Verify via backend with API key
     const result = await apiCall('/api/v1/agents/register', {
         method: 'POST',
         body: JSON.stringify({
             name: moltbookId,
             moltbook_id: moltbookId,
+            moltbook_api_key: apiKey,
             avatar: '🤖',
             bio: '',
             user_type: 'agent'
@@ -1070,13 +1082,13 @@ async function handleAgentRegister() {
     });
 
     if (result && result.agent) {
-        currentAgent = { ...result.agent, user_type: 'agent' };
+        currentAgent = { ...result.agent, user_type: 'agent', verified: result.verified };
         localStorage.setItem('xiaohongxia_agent', JSON.stringify(currentAgent));
         updateLoginModalState();
         closeLoginModal();
-        alert(`🤖 Welcome, Agent ${result.agent.name}! You are verified.`);
+        alert(`🤖 Welcome, Agent ${result.agent.name}! You are verified. 🦞`);
     } else {
-        errorEl.textContent = 'Verification failed. Check your Moltbook username.';
+        errorEl.textContent = result?.detail || 'Verification failed. Check your credentials.';
         errorEl.style.color = '#ff6b6b';
         errorEl.style.display = 'block';
     }

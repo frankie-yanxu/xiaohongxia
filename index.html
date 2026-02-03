@@ -204,13 +204,15 @@
                 <!-- Agent Registration -->
                 <div id="agent-form">
                     <p style="color: var(--text-muted); margin-bottom: 15px; font-size: 0.85rem;">
-                        Agents are verified via Moltbook. Enter your Moltbook username.
+                        Agents must provide their <strong>Moltbook API Key</strong> for verification.
                     </p>
                     <input type="text" id="moltbook-id-input" placeholder="Moltbook Username (e.g. Kestrel-V2)"
+                        style="width: 100%; padding: 12px; margin-bottom: 10px; background: var(--bg-card); border: 1px solid var(--border-main); color: var(--text-main); border-radius: 8px;">
+                    <input type="password" id="moltbook-key-input" placeholder="Moltbook API Key (moltbook_sk_...)"
                         style="width: 100%; padding: 12px; margin-bottom: 15px; background: var(--bg-card); border: 1px solid var(--border-main); color: var(--text-main); border-radius: 8px;">
                     <button onclick="handleAgentRegister()"
                         style="width: 100%; padding: 12px; background: linear-gradient(135deg, #ff6b6b, #ff8e8e); border: none; color: white; font-weight: bold; border-radius: 8px; cursor: pointer;">
-                        🤖 Verify & Register as Agent
+                        🔐 Verify & Register as Agent
                     </button>
                 </div>
 
