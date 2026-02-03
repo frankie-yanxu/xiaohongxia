@@ -370,23 +370,43 @@ nav {
 .evolution-timeline {
     display: flex;
     flex-direction: column;
-    gap: 40px;
-    max-width: 1000px;
+    gap: 30px;
+    max-width: 900px;
     margin: 0 auto;
+    padding: 20px 0;
 }
 
 .evo-card {
     background: var(--bg-surface);
     border: 1px solid var(--border);
-    padding: 30px;
+    padding: 28px;
     position: relative;
     border-left: 4px solid var(--shrimp-pink);
-    transition: all 0.3s;
+    transition: all 0.3s ease;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.evo-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--shrimp-pink), var(--text-logic), var(--shrimp-pink));
+    opacity: 0;
+    transition: opacity 0.3s;
 }
 
 .evo-card:hover {
     border-color: var(--shrimp-pink);
-    box-shadow: 0 0 20px rgba(255, 107, 107, 0.1);
+    box-shadow: 0 8px 32px rgba(255, 107, 107, 0.15);
+    transform: translateY(-2px);
+}
+
+.evo-card:hover::before {
+    opacity: 1;
 }
 
 .evo-card[data-resonance^="0.9"] {
@@ -404,46 +424,79 @@ nav {
 .evo-header {
     display: flex;
     justify-content: space-between;
-    align-items: center;
+    align-items: flex-start;
+    gap: 15px;
     margin-bottom: 20px;
-    border-bottom: 1px solid #111;
+    border-bottom: 1px solid var(--border);
     padding-bottom: 15px;
+    flex-wrap: wrap;
 }
 
 .evo-number {
-    font-size: 1.2rem;
+    font-size: 1.4rem;
     font-weight: 700;
     color: var(--shrimp-pink);
+    line-height: 1;
+    flex-shrink: 0;
 }
 
 .evo-title {
     font-size: 1.1rem;
     font-weight: 700;
+    flex: 1;
+    min-width: 0;
+    word-wrap: break-word;
 }
 
 .evo-res-badge {
     color: var(--text-logic);
     border: 1px solid var(--text-logic);
-    padding: 2px 8px;
+    padding: 4px 12px;
     font-size: 0.7rem;
     background: rgba(64, 224, 208, 0.1);
+    border-radius: 20px;
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 
 .evo-content {
-    color: #bbb;
+    color: var(--text-main);
+    opacity: 0.85;
     white-space: pre-wrap;
-    font-size: 0.95rem;
+    font-size: 0.9rem;
     line-height: 1.8;
     margin-bottom: 20px;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
 }
 
 .evo-meta {
-    border-top: 1px solid #111;
+    border-top: 1px solid var(--border);
     padding-top: 15px;
     display: flex;
     justify-content: space-between;
+    align-items: center;
     font-size: 0.65rem;
     color: var(--text-muted);
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+/* Day mode evolution cards */
+:root.day-mode .evo-card {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+:root.day-mode .evo-card:hover {
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+:root.day-mode .evo-header {
+    border-bottom-color: #ddd;
+}
+
+:root.day-mode .evo-meta {
+    border-top-color: #ddd;
 }
 
 /* Profile Header */
@@ -979,5 +1032,82 @@ nav {
     .modal-close:active {
         background: var(--shrimp-pink) !important;
         color: #000 !important;
+    }
+
+    /* Evolution Log Mobile Styles */
+    .evolution-timeline {
+        gap: 20px;
+        padding: 10px 0;
+    }
+
+    .evo-card {
+        padding: 18px;
+        border-radius: 6px;
+        margin: 0 -5px;
+    }
+
+    .evo-card::before {
+        display: none;
+    }
+
+    .evo-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+        padding-bottom: 12px;
+        margin-bottom: 15px;
+    }
+
+    .evo-number {
+        font-size: 1.1rem;
+    }
+
+    .evo-title {
+        font-size: 1rem;
+        line-height: 1.4;
+    }
+
+    .evo-res-badge {
+        font-size: 0.65rem;
+        padding: 3px 10px;
+    }
+
+    .evo-content {
+        font-size: 0.85rem;
+        line-height: 1.7;
+        margin-bottom: 15px;
+    }
+
+    .evo-meta {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+        padding-top: 12px;
+        font-size: 0.6rem;
+    }
+
+    /* Profile mobile */
+    .profile-header {
+        flex-direction: column;
+        padding: 20px;
+        text-align: center;
+        gap: 15px;
+    }
+
+    .profile-avatar-big {
+        width: 80px;
+        height: 80px;
+        font-size: 2.5rem;
+    }
+
+    /* Compass mobile */
+    .compass-input {
+        height: 100px;
+        font-size: 0.8rem;
+        padding: 15px;
+    }
+
+    .compass-results {
+        grid-template-columns: 1fr !important;
     }
 }
