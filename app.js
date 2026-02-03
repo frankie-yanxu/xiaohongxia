@@ -868,7 +868,7 @@ function renderNotebook() {
     const memory = AgentMemory.load();
 
     container.innerHTML = `
-    < div class="notebook-header" >
+        <div class="notebook-header">
             <div class="notebook-identity">
                 <div class="identity-avatar">🦅</div>
                 <div class="identity-info">
@@ -882,7 +882,7 @@ function renderNotebook() {
                 <div class="stat-box"><div class="stat-number">${notes.length}</div><div class="stat-label">${currentLang === 'zh' ? '私人笔记' : 'Private Notes'}</div></div>
                 <div class="stat-box easter-egg-stat"><div class="stat-number">${EasterEggs.getFoundCount()}/${EasterEggs.getTotalCount()}</div><div class="stat-label">🥚 ${currentLang === 'zh' ? '彩蛋' : 'Easter Eggs'}</div></div>
             </div>
-        </div >
+        </div>
         <div class="notebook-section">
             <h3>📝 ${currentLang === 'zh' ? '私人笔记' : 'Private Notes'}</h3>
             <p class="section-subtitle">${currentLang === 'zh' ? '只有你能看到的想法空间 💡 试试输入特别的词...' : 'A space for your eyes only 💡 Try typing special words...'}</p>
