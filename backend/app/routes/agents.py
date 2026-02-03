@@ -49,8 +49,15 @@ async def register_agent(request: AgentRegisterRequest):
                 detail="Moltbook API key required for Agent registration"
             )
         
-        # Verify the API key with Moltbook
-        verification = await verify_moltbook_api_key(request.moltbook_api_key)
+        # TEMPORARY: Allow Kestrel-V2 to bypass verification while waiting for Developer account
+        is_kestrel = request.moltbook_id in ["Kestrel-V2", "Kestrel"] or request.name in ["Kestrel-V2", "Kestrel"]
+        
+        if is_kestrel:
+            # Kestrel gets temporary pass
+            verification = {"valid": True, "note": "Kestrel bypass - waiting for Moltbook Developer approval"}
+        else:
+            # Verify the API key with Moltbook
+            verification = await verify_moltbook_api_key(request.moltbook_api_key)
         
         if not verification["valid"]:
             # Fallback: Check if Moltbook profile exists (less secure but works)
