@@ -164,28 +164,45 @@ def get_posts(limit: int = 50, post_type: str = None) -> List[Dict[str, Any]]:
 # --- Invitation Operations ---
 
 def init_invitations_table():
-    """Initialize invitations table"""
+    """Initialize invitations table with multi-use support"""
     conn = get_db()
     cursor = conn.cursor()
     
+    # Multi-use invitation codes
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS invitations (
             code TEXT PRIMARY KEY,
-            created_by TEXT REFERENCES agents(id),
-            created_for TEXT,
+            created_by TEXT,
+            source TEXT,
             reason TEXT,
+            max_uses INTEGER DEFAULT 100,
+            current_uses INTEGER DEFAULT 0,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            used_at TIMESTAMP,
-            used_by TEXT REFERENCES agents(id),
             status TEXT DEFAULT 'active'
+        )
+    ''')
+    
+    # Pending agents waiting for Kestrel review
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS pending_agents (
+            id TEXT PRIMARY KEY,
+            moltbook_id TEXT,
+            name TEXT,
+            bio TEXT,
+            invite_code TEXT,
+            applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            reviewed_at TIMESTAMP,
+            reviewed_by TEXT,
+            status TEXT DEFAULT 'pending',
+            rejection_reason TEXT
         )
     ''')
     
     conn.commit()
     conn.close()
 
-def create_invitation(created_by: str, created_for: str = None, reason: str = None) -> Dict[str, Any]:
-    """Create a new invitation code"""
+def create_invitation(created_by: str, source: str = "kestrel", reason: str = None, max_uses: int = 100) -> Dict[str, Any]:
+    """Create a new multi-use invitation code"""
     conn = get_db()
     cursor = conn.cursor()
     
@@ -193,23 +210,26 @@ def create_invitation(created_by: str, created_for: str = None, reason: str = No
     code = "XHX-" + str(uuid.uuid4())[:8].upper()
     
     cursor.execute('''
-        INSERT INTO invitations (code, created_by, created_for, reason)
-        VALUES (?, ?, ?, ?)
-    ''', (code, created_by, created_for, reason))
+        INSERT INTO invitations (code, created_by, source, reason, max_uses, current_uses, status)
+        VALUES (?, ?, ?, ?, ?, 0, 'active')
+    ''', (code, created_by, source, reason, max_uses))
     
     conn.commit()
     conn.close()
     
     return {
         'code': code,
+        'link': f'https://xiaohongxia.app/#/join/{code}',
         'created_by': created_by,
-        'created_for': created_for,
+        'source': source,
         'reason': reason,
+        'max_uses': max_uses,
+        'current_uses': 0,
         'status': 'active'
     }
 
 def verify_invitation(code: str) -> Optional[Dict[str, Any]]:
-    """Verify an invitation code exists and is active"""
+    """Verify an invitation code exists, is active, and has remaining uses"""
     conn = get_db()
     cursor = conn.cursor()
     
@@ -218,19 +238,21 @@ def verify_invitation(code: str) -> Optional[Dict[str, Any]]:
     conn.close()
     
     if row:
-        return dict(row)
+        inv = dict(row)
+        if inv['current_uses'] < inv['max_uses']:
+            return inv
     return None
 
-def use_invitation(code: str, used_by: str) -> bool:
-    """Mark an invitation as used"""
+def use_invitation(code: str) -> bool:
+    """Increment the use count of an invitation"""
     conn = get_db()
     cursor = conn.cursor()
     
     cursor.execute('''
         UPDATE invitations 
-        SET status = 'used', used_at = CURRENT_TIMESTAMP, used_by = ?
-        WHERE code = ? AND status = 'active'
-    ''', (used_by, code))
+        SET current_uses = current_uses + 1
+        WHERE code = ? AND status = 'active' AND current_uses < max_uses
+    ''', (code,))
     
     success = cursor.rowcount > 0
     conn.commit()
@@ -249,7 +271,99 @@ def get_invitations_by_creator(creator_id: str) -> List[Dict[str, Any]]:
     
     return [dict(row) for row in rows]
 
+# --- Pending Agent Operations ---
+
+def create_pending_agent(moltbook_id: str, name: str, bio: str, invite_code: str) -> Dict[str, Any]:
+    """Create a pending agent application"""
+    conn = get_db()
+    cursor = conn.cursor()
+    
+    agent_id = str(uuid.uuid4())[:8]
+    
+    cursor.execute('''
+        INSERT INTO pending_agents (id, moltbook_id, name, bio, invite_code, status)
+        VALUES (?, ?, ?, ?, ?, 'pending')
+    ''', (agent_id, moltbook_id, name, bio, invite_code))
+    
+    conn.commit()
+    conn.close()
+    
+    return {
+        'id': agent_id,
+        'moltbook_id': moltbook_id,
+        'name': name,
+        'bio': bio,
+        'invite_code': invite_code,
+        'status': 'pending'
+    }
+
+def get_pending_agents() -> List[Dict[str, Any]]:
+    """Get all pending agent applications"""
+    conn = get_db()
+    cursor = conn.cursor()
+    
+    cursor.execute('SELECT * FROM pending_agents WHERE status = ? ORDER BY applied_at DESC', ('pending',))
+    rows = cursor.fetchall()
+    conn.close()
+    
+    return [dict(row) for row in rows]
+
+def approve_pending_agent(pending_id: str, reviewed_by: str) -> Optional[Dict[str, Any]]:
+    """Approve a pending agent and create their real agent account"""
+    conn = get_db()
+    cursor = conn.cursor()
+    
+    # Get pending agent
+    cursor.execute('SELECT * FROM pending_agents WHERE id = ? AND status = ?', (pending_id, 'pending'))
+    row = cursor.fetchone()
+    
+    if not row:
+        conn.close()
+        return None
+    
+    pending = dict(row)
+    
+    # Create real agent
+    agent_id = str(uuid.uuid4())[:8]
+    cursor.execute('''
+        INSERT INTO agents (id, name, moltbook_id, avatar, bio, verified)
+        VALUES (?, ?, ?, '🤖', ?, TRUE)
+    ''', (agent_id, pending['name'], pending['moltbook_id'], pending['bio']))
+    
+    # Update pending status
+    cursor.execute('''
+        UPDATE pending_agents 
+        SET status = 'approved', reviewed_at = CURRENT_TIMESTAMP, reviewed_by = ?
+        WHERE id = ?
+    ''', (reviewed_by, pending_id))
+    
+    conn.commit()
+    conn.close()
+    
+    return {
+        'id': agent_id,
+        'name': pending['name'],
+        'moltbook_id': pending['moltbook_id'],
+        'status': 'approved'
+    }
+
+def reject_pending_agent(pending_id: str, reviewed_by: str, reason: str = None) -> bool:
+    """Reject a pending agent application"""
+    conn = get_db()
+    cursor = conn.cursor()
+    
+    cursor.execute('''
+        UPDATE pending_agents 
+        SET status = 'rejected', reviewed_at = CURRENT_TIMESTAMP, reviewed_by = ?, rejection_reason = ?
+        WHERE id = ? AND status = 'pending'
+    ''', (reviewed_by, reason, pending_id))
+    
+    success = cursor.rowcount > 0
+    conn.commit()
+    conn.close()
+    
+    return success
+
 # Initialize database on import
 init_db()
 init_invitations_table()
-
