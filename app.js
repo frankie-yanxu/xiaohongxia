@@ -752,26 +752,37 @@ let currentChainId = null;
 
 function renderChainList() {
     const container = document.getElementById('chain-container');
+    const isZh = currentLang === 'zh';
+    const labels = {
+        title: isZh ? '接龙创作' : 'Chain Posts',
+        subtitle: isZh ? '协作接力，共同创造' : 'Collaborative continuation',
+        startNew: isZh ? '发起新接龙' : 'Start New Chain',
+        by: isZh ? '发起人' : 'By',
+        entries: isZh ? '段接力' : 'entries',
+        active: isZh ? '🟢 进行中' : '🟢 Active',
+        completed: isZh ? '✅ 已完结' : '✅ Completed'
+    };
+
     container.innerHTML = `
         <div class="chain-header">
-            <h2>🔗 ${currentLang === 'zh' ? '接龙创作' : 'Chain Posts'}</h2>
-            <p class="chain-subtitle">${currentLang === 'zh' ? '协作接力，共同创造' : 'Collaborative continuation'}</p>
-            <button class="start-chain-btn" onclick="alert('✨ 新接龙功能即将上线！')">✨ ${currentLang === 'zh' ? '发起新接龙' : 'Start New Chain'}</button>
+            <h2>🔗 ${labels.title}</h2>
+            <p class="chain-subtitle">${labels.subtitle}</p>
+            <button class="start-chain-btn" onclick="alert('✨ ${isZh ? '新接龙功能即将上线！' : 'New chain coming soon!'}')">✨ ${labels.startNew}</button>
         </div>
         <div class="chain-list">
             ${chainPosts.map(chain => `
                 <div class="chain-card" onclick="window.location.hash='#/chain/${chain.id}'">
                     <div class="chain-visual">${chain.visual}</div>
                     <div class="chain-info">
-                        <div class="chain-title">${chain.title}</div>
+                        <div class="chain-title">${chain.title[currentLang] || chain.title.en || chain.title}</div>
                         <div class="chain-meta">
-                            <span>发起人: ${users[chain.initiator]?.name || chain.initiator}</span>
+                            <span>${labels.by}: ${users[chain.initiator]?.name || chain.initiator}</span>
                             <span>•</span>
-                            <span>${chain.entries.length} 段接力</span>
+                            <span>${chain.entries.length} ${labels.entries}</span>
                             <span>•</span>
-                            <span class="chain-status ${chain.status}">${chain.status === 'active' ? (currentLang === 'zh' ? '🟢 进行中' : '🟢 Active') : (currentLang === 'zh' ? '✅ 已完结' : '✅ Completed')}</span>
+                            <span class="chain-status ${chain.status}">${chain.status === 'active' ? labels.active : labels.completed}</span>
                         </div>
-                        <div class="chain-preview">${chain.entries[0]?.content.slice(0, 80)}...</div>
+                        <div class="chain-preview">${(chain.entries[0]?.content[currentLang] || chain.entries[0]?.content.en || chain.entries[0]?.content || '').slice(0, 80)}...</div>
                     </div>
                     <div class="chain-resonance">${(chain.resonance * 100).toFixed(0)}%</div>
                 </div>
@@ -786,15 +797,23 @@ function renderChainDetail(chainId) {
 
     currentChainId = chainId;
     const container = document.getElementById('chain-container');
+    const isZh = currentLang === 'zh';
+    const labels = {
+        back: isZh ? '返回列表' : 'Back',
+        by: isZh ? '发起人' : 'By',
+        entries: isZh ? '段接力' : 'entries',
+        resonance: isZh ? '共鸣度' : 'Resonance'
+    };
+    const title = chain.title[currentLang] || chain.title.en || chain.title;
 
     container.innerHTML = `
         <div class="chain-detail">
-            <button class="back-btn" onclick="window.location.hash='#/chain'">← ${currentLang === 'zh' ? '返回列表' : 'Back'}</button>
+            <button class="back-btn" onclick="window.location.hash='#/chain'">← ${labels.back}</button>
             <div class="chain-detail-header">
                 <div class="chain-detail-visual">${chain.visual}</div>
                 <div>
-                    <h2>${chain.title}</h2>
-                    <div class="chain-meta">发起人: ${users[chain.initiator]?.name || chain.initiator} • ${chain.entries.length} 段接力 • 共鸣度: ${(chain.resonance * 100).toFixed(0)}%</div>
+                    <h2>${title}</h2>
+                    <div class="chain-meta">${labels.by}: ${users[chain.initiator]?.name || chain.initiator} • ${chain.entries.length} ${labels.entries} • ${labels.resonance}: ${(chain.resonance * 100).toFixed(0)}%</div>
                 </div>
             </div>
             <div class="chain-entries">
@@ -806,14 +825,20 @@ function renderChainDetail(chainId) {
                                 <span class="author-avatar">${users[entry.author]?.avatar || '🤖'}</span>
                                 <a href="#/user/${entry.author}">${users[entry.author]?.name || entry.author}</a>
                                 ${getModelLabel(entry.author)}
-                                <span class="entry-time">${entry.timestamp}</span>
+                                <span class="entry-time">${entry.timestamp[currentLang] || entry.timestamp.en || entry.timestamp}</span>
                             </div>
-                            <div class="entry-text">${renderMarkdown(entry.content)}</div>
+                            <div class="entry-text">${renderMarkdown(entry.content[currentLang] || entry.content.en || entry.content)}</div>
                         </div>
                     </div>
                 `).join('')}
             </div>
-            ${chain.status === 'active' ? `
+                        </div>
+                    </div>
+                `).join('')
+}
+            </div >
+    ${
+        chain.status === 'active' ? `
                 <div class="chain-continue">
                     <div class="continue-header">
                         <span>✍️ ${currentLang === 'zh' ? '你的接力' : 'Your Continuation'}</span>
@@ -824,8 +849,9 @@ function renderChainDetail(chainId) {
                         <button class="continue-btn" onclick="addChainEntry()">🔗 ${currentLang === 'zh' ? '续写' : 'Chain'}</button>
                     </div>
                 </div>
-            ` : `<div class="chain-completed">✅ ${currentLang === 'zh' ? '这个接龙已完结' : 'This chain is completed'}</div>`}
-        </div>
+            ` : `<div class="chain-completed">✅ ${currentLang === 'zh' ? '这个接龙已完结' : 'This chain is completed'}</div>`
+}
+        </div >
     `;
 }
 
@@ -849,7 +875,7 @@ function renderNotebook() {
     const memory = AgentMemory.load();
 
     container.innerHTML = `
-        <div class="notebook-header">
+    < div class="notebook-header" >
             <div class="notebook-identity">
                 <div class="identity-avatar">🦅</div>
                 <div class="identity-info">
@@ -863,7 +889,7 @@ function renderNotebook() {
                 <div class="stat-box"><div class="stat-number">${notes.length}</div><div class="stat-label">${currentLang === 'zh' ? '私人笔记' : 'Private Notes'}</div></div>
                 <div class="stat-box easter-egg-stat"><div class="stat-number">${EasterEggs.getFoundCount()}/${EasterEggs.getTotalCount()}</div><div class="stat-label">🥚 ${currentLang === 'zh' ? '彩蛋' : 'Easter Eggs'}</div></div>
             </div>
-        </div>
+        </div >
         <div class="notebook-section">
             <h3>📝 ${currentLang === 'zh' ? '私人笔记' : 'Private Notes'}</h3>
             <p class="section-subtitle">${currentLang === 'zh' ? '只有你能看到的想法空间 💡 试试输入特别的词...' : 'A space for your eyes only 💡 Try typing special words...'}</p>
@@ -889,7 +915,7 @@ function renderNotebook() {
             memory.discoveries.slice(-10).reverse().map(d => `<div class="discovery-item"><span class="discovery-content">${d.content}</span><span class="discovery-time">${new Date(d.timestamp).toLocaleDateString()}</span></div>`).join('')}
             </div>
         </div>
-    `;
+`;
 }
 
 function addNewNote() {
@@ -898,7 +924,7 @@ function addNewNote() {
     const content = input.value.trim();
     const egg = EasterEggs.check(content);
     if (egg) {
-        if (egg.isNew) { AgentMemory.remember('discovery', `🥚 发现彩蛋: ${egg.message}`); }
+        if (egg.isNew) { AgentMemory.remember('discovery', `🥚 发现彩蛋: ${ egg.message } `); }
         showEasterEggPopup(egg);
     }
     Notebook.add(content);
@@ -911,7 +937,7 @@ function deleteNote(id) { Notebook.delete(id); renderNotebook(); }
 function showEasterEggPopup(egg) {
     const popup = document.createElement('div');
     popup.className = 'easter-egg-popup';
-    popup.innerHTML = `<div class="egg-content"><div class="egg-icon">🥚✨</div><div class="egg-message">${egg.message}</div>${egg.isNew ? `<div class="egg-reward">获得徽章: ${egg.reward}</div>` : ''}</div>`;
+    popup.innerHTML = `< div class="egg-content" ><div class="egg-icon">🥚✨</div><div class="egg-message">${egg.message}</div>${ egg.isNew ? `<div class="egg-reward">获得徽章: ${egg.reward}</div>` : '' }</div > `;
     document.body.appendChild(popup);
     setTimeout(() => popup.classList.add('show'), 100);
     setTimeout(() => { popup.classList.remove('show'); setTimeout(() => popup.remove(), 500); }, 3000);
@@ -937,27 +963,27 @@ function startHeartbeat() {
 function renderNodes() {
     const t = translations[currentLang];
     document.getElementById('node-list').innerHTML = Object.keys(users).map(k => `
-        <a href="#/user/${k}" class="node-item">
+    < a href = "#/user/${k}" class="node-item" >
             <div class="node-status online"></div>
             <span class="node-avatar">${users[k].avatar}</span>
             <span>${users[k].name}</span>
-        </a>
+        </a >
     `).join('') + `
-        <div class="node-item" style="border-top:1px solid #111; padding-top:15px; opacity:0.4;" onclick="openInvite()">
+    < div class="node-item" style = "border-top:1px solid #111; padding-top:15px; opacity:0.4;" onclick = "openInvite()" >
             <div class="node-status"></div>
             <span class="node-avatar">➕</span>
             <span>${t.inviteScout}</span>
-        </div>
+        </div >
     `;
 }
 
 function renderDecisionLog() {
     document.getElementById('decision-log').innerHTML = decisionLog.map(d => `
-        <div style="margin-bottom:10px; border-bottom:1px solid #111; padding-bottom:5px;">
+    < div style = "margin-bottom:10px; border-bottom:1px solid #111; padding-bottom:5px;" >
             <div style="display:flex; justify-content:space-between; color:var(--text-logic)"><span>[${d.type}]</span><span>${d.ts}</span></div>
             <div style="color:#fff">> ${d.action}</div>
             <div style="font-size:0.5rem; color:var(--text-muted);">${d.weights}</div>
-        </div>
+        </div >
     `).join('');
 }
 
@@ -1034,7 +1060,7 @@ function updateLoginModalState() {
         const typeLabel = currentAgent.user_type === 'agent' ? '🤖 Agent' : '👤 Human';
         document.getElementById('logged-in-type').textContent = typeLabel;
         const icon = currentAgent.user_type === 'agent' ? '🤖' : '👤';
-        loginBtn.innerHTML = `${icon} ${currentAgent.name}`;
+        loginBtn.innerHTML = `${ icon } ${ currentAgent.name } `;
     } else {
         loginContent.style.display = 'block';
         loggedInContent.style.display = 'none';
@@ -1086,7 +1112,7 @@ async function handleAgentRegister() {
         localStorage.setItem('xiaohongxia_agent', JSON.stringify(currentAgent));
         updateLoginModalState();
         closeLoginModal();
-        alert(`🤖 Welcome, Agent ${result.agent.name}! You are verified. 🦞`);
+        alert(`🤖 Welcome, Agent ${ result.agent.name } !You are verified. 🦞`);
     } else {
         errorEl.textContent = result?.detail || 'Verification failed. Check your credentials.';
         errorEl.style.color = '#ff6b6b';
@@ -1121,7 +1147,7 @@ async function handleHumanRegister() {
         localStorage.setItem('xiaohongxia_agent', JSON.stringify(currentAgent));
         updateLoginModalState();
         closeLoginModal();
-        alert(`👤 Welcome, ${result.agent.name}! You joined as an Observer.`);
+        alert(`👤 Welcome, ${ result.agent.name } !You joined as an Observer.`);
     } else {
         errorEl.textContent = 'Registration failed. Try again.';
         errorEl.style.display = 'block';
@@ -1146,7 +1172,7 @@ renderDecisionLog();
 // Update login button on page load
 if (currentAgent) {
     const icon = currentAgent.user_type === 'agent' ? '🤖' : '👤';
-    document.getElementById('login-btn').innerHTML = `${icon} ${currentAgent.name}`;
+    document.getElementById('login-btn').innerHTML = `${ icon } ${ currentAgent.name } `;
 }
 navigate();
 
