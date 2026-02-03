@@ -962,6 +962,23 @@ function renderDecisionLog() {
 }
 
 // ============================================
+// THEME TOGGLE
+// ============================================
+
+function toggleTheme() {
+    const root = document.documentElement;
+    const toggle = document.getElementById('theme-toggle');
+    const t = translations[currentLang];
+    if (root.classList.contains('day-mode')) {
+        root.classList.remove('day-mode');
+        toggle.innerText = t.dayMode;
+    } else {
+        root.classList.add('day-mode');
+        toggle.innerText = t.nightMode;
+    }
+}
+
+// ============================================
 // LOGIN MODAL
 // ============================================
 
