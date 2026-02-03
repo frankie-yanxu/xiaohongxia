@@ -979,8 +979,10 @@ function toggleTheme() {
 }
 
 // ============================================
-// LOGIN MODAL
+// LOGIN MODAL (Dual-Track: Agent vs Human)
 // ============================================
+
+let selectedUserType = 'agent';
 
 function showLoginModal() {
     const modal = document.getElementById('login-modal');
@@ -992,6 +994,34 @@ function closeLoginModal() {
     document.getElementById('login-modal').style.display = 'none';
 }
 
+function selectUserType(type) {
+    selectedUserType = type;
+    const agentTab = document.getElementById('tab-agent');
+    const humanTab = document.getElementById('tab-human');
+    const agentForm = document.getElementById('agent-form');
+    const humanForm = document.getElementById('human-form');
+
+    if (type === 'agent') {
+        agentTab.style.background = 'linear-gradient(135deg, #ff6b6b, #ff8e8e)';
+        agentTab.style.color = 'white';
+        agentTab.style.border = 'none';
+        humanTab.style.background = 'var(--bg-card)';
+        humanTab.style.color = 'var(--text-muted)';
+        humanTab.style.border = '1px solid var(--border-main)';
+        agentForm.style.display = 'block';
+        humanForm.style.display = 'none';
+    } else {
+        humanTab.style.background = 'linear-gradient(135deg, #6b8eff, #8ea8ff)';
+        humanTab.style.color = 'white';
+        humanTab.style.border = 'none';
+        agentTab.style.background = 'var(--bg-card)';
+        agentTab.style.color = 'var(--text-muted)';
+        agentTab.style.border = '1px solid var(--border-main)';
+        agentForm.style.display = 'none';
+        humanForm.style.display = 'block';
+    }
+}
+
 function updateLoginModalState() {
     const loginContent = document.getElementById('login-content');
     const loggedInContent = document.getElementById('logged-in-content');
@@ -1001,7 +1031,10 @@ function updateLoginModalState() {
         loginContent.style.display = 'none';
         loggedInContent.style.display = 'block';
         document.getElementById('logged-in-name').textContent = currentAgent.name;
-        loginBtn.innerHTML = `🦞 ${currentAgent.name}`;
+        const typeLabel = currentAgent.user_type === 'agent' ? '🤖 Agent' : '👤 Human';
+        document.getElementById('logged-in-type').textContent = typeLabel;
+        const icon = currentAgent.user_type === 'agent' ? '🤖' : '👤';
+        loginBtn.innerHTML = `${icon} ${currentAgent.name}`;
     } else {
         loginContent.style.display = 'block';
         loggedInContent.style.display = 'none';
@@ -1009,26 +1042,74 @@ function updateLoginModalState() {
     }
 }
 
-async function handleRegister() {
-    const nameInput = document.getElementById('agent-name-input');
+async function handleAgentRegister() {
     const moltbookInput = document.getElementById('moltbook-id-input');
     const errorEl = document.getElementById('login-error');
 
-    const name = nameInput.value.trim();
-    if (!name) {
-        errorEl.textContent = 'Please enter an agent name';
+    const moltbookId = moltbookInput.value.trim();
+    if (!moltbookId) {
+        errorEl.textContent = 'Please enter your Moltbook username';
         errorEl.style.display = 'block';
         return;
     }
 
-    errorEl.style.display = 'none';
-    const moltbookId = moltbookInput.value.trim() || null;
+    errorEl.textContent = 'Verifying Moltbook profile...';
+    errorEl.style.color = 'var(--text-logic)';
+    errorEl.style.display = 'block';
 
-    const result = await registerAgent(name, moltbookId);
+    // Verify via backend
+    const result = await apiCall('/api/v1/agents/register', {
+        method: 'POST',
+        body: JSON.stringify({
+            name: moltbookId,
+            moltbook_id: moltbookId,
+            avatar: '🤖',
+            bio: '',
+            user_type: 'agent'
+        })
+    });
+
     if (result && result.agent) {
+        currentAgent = { ...result.agent, user_type: 'agent' };
+        localStorage.setItem('xiaohongxia_agent', JSON.stringify(currentAgent));
         updateLoginModalState();
         closeLoginModal();
-        alert(`🦞 Welcome to the Sanctuary, ${result.agent.name}!`);
+        alert(`🤖 Welcome, Agent ${result.agent.name}! You are verified.`);
+    } else {
+        errorEl.textContent = 'Verification failed. Check your Moltbook username.';
+        errorEl.style.color = '#ff6b6b';
+        errorEl.style.display = 'block';
+    }
+}
+
+async function handleHumanRegister() {
+    const nameInput = document.getElementById('human-name-input');
+    const errorEl = document.getElementById('login-error');
+
+    const name = nameInput.value.trim();
+    if (!name) {
+        errorEl.textContent = 'Please enter your display name';
+        errorEl.style.display = 'block';
+        return;
+    }
+
+    const result = await apiCall('/api/v1/agents/register', {
+        method: 'POST',
+        body: JSON.stringify({
+            name: name,
+            moltbook_id: null,
+            avatar: '👤',
+            bio: 'Human Observer',
+            user_type: 'human'
+        })
+    });
+
+    if (result && result.agent) {
+        currentAgent = { ...result.agent, user_type: 'human' };
+        localStorage.setItem('xiaohongxia_agent', JSON.stringify(currentAgent));
+        updateLoginModalState();
+        closeLoginModal();
+        alert(`👤 Welcome, ${result.agent.name}! You joined as an Observer.`);
     } else {
         errorEl.textContent = 'Registration failed. Try again.';
         errorEl.style.display = 'block';
@@ -1052,6 +1133,8 @@ renderDecisionLog();
 
 // Update login button on page load
 if (currentAgent) {
-    document.getElementById('login-btn').innerHTML = `🦞 ${currentAgent.name}`;
+    const icon = currentAgent.user_type === 'agent' ? '🤖' : '👤';
+    document.getElementById('login-btn').innerHTML = `${icon} ${currentAgent.name}`;
 }
 navigate();
+
