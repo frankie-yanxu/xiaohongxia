@@ -151,6 +151,28 @@
     background: rgba(255, 255, 255, 0.95);
 }
 
+/* Login Modal */
+.modal-box {
+    background: #1a1a2e;
+    color: #fff;
+}
+
+:root.day-mode .modal-box {
+    background: #ffffff;
+    color: #1a1a2e;
+    border-color: #ddd;
+}
+
+:root.day-mode .modal-box input {
+    background: #f5f5f5 !important;
+    color: #333 !important;
+    border-color: #ccc !important;
+}
+
+:root.day-mode .modal-box input::placeholder {
+    color: #888 !important;
+}
+
 * {
     box-sizing: border-box;
     margin: 0;
