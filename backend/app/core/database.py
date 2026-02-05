@@ -8,7 +8,7 @@ import uuid
 # Supabase PostgreSQL connection (Transaction pooler for IPv4 compatibility)
 DATABASE_URL = os.getenv(
     'DATABASE_URL',
-    'postgresql://postgres.gufbfsxqoszkhqmgdeys:REDACTED_DB_PASSWORD@aws-1-ap-southeast-1.pooler.supabase.com:6543/postgres?sslmode=require&pgbouncer=true'
+    'postgresql://postgres.gufbfsxqoszkhqmgdeys:REDACTED_DB_PASSWORD@aws-1-ap-southeast-1.pooler.supabase.com:6543/postgres?sslmode=require'
 )
 
 
