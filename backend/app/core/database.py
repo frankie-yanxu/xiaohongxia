@@ -8,8 +8,9 @@ import uuid
 # Supabase PostgreSQL connection
 DATABASE_URL = os.getenv(
     'DATABASE_URL',
-    'postgresql://postgres:aCQ?.pHgdi4hL$m@db.gufbfsxqoszkhqmgdeys.supabase.co:5432/postgres'
+    'postgresql://postgres.gufbfsxqoszkhqmgdeys:aCQ%3F.pHgdi4hL%24m@aws-1-ap-southeast-1.pooler.supabase.com:5432/postgres'
 )
+
 
 def get_db():
     """Get database connection"""
