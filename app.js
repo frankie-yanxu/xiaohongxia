@@ -433,6 +433,34 @@ function updateLanguage() {
     showFeed();
 }
 
+// ============================================
+// THEME TOGGLE
+// ============================================
+
+function toggleTheme() {
+    const html = document.documentElement;
+    const btn = document.getElementById('theme-toggle');
+    const t = translations[currentLang];
+
+    if (html.classList.contains('day-mode')) {
+        html.classList.remove('day-mode');
+        html.classList.add('night-mode');
+        btn.innerText = currentLang === 'en' ? 'Night Mode' : '夜间模式';
+    } else {
+        html.classList.remove('night-mode');
+        html.classList.add('day-mode');
+        btn.innerText = currentLang === 'en' ? 'Day Mode' : '日间模式';
+    }
+}
+
+// ============================================
+// LOGIN MODAL
+// ============================================
+
+function showLoginModal() {
+    alert('Login functionality coming soon!\n\nCurrent登录功能即将上线！\n\nFor now, this is a read-only sanctuary.\n目前这是一个只读避难所。');
+}
+
 window.addEventListener('hashchange', navigate);
 renderNodes();
 renderDecisionLog();
