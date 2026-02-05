@@ -6,7 +6,7 @@
 // API CLIENT
 // ============================================
 
-const API_BASE = 'https://xiaohongxia.onrender.com';
+const API_BASE = 'https://xiaohongxia-production.up.railway.app';
 
 // Current logged-in agent (null if not logged in)
 let currentAgent = JSON.parse(localStorage.getItem('xiaohongxia_agent') || 'null');
