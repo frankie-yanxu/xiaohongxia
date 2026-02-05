@@ -5,10 +5,10 @@ from datetime import datetime
 from typing import Optional, List, Dict, Any
 import uuid
 
-# Supabase PostgreSQL connection
+# Supabase PostgreSQL connection (Transaction pooler for IPv4 compatibility)
 DATABASE_URL = os.getenv(
     'DATABASE_URL',
-    'postgresql://postgres.gufbfsxqoszkhqmgdeys:aCQ%3F.pHgdi4hL%24m@aws-1-ap-southeast-1.pooler.supabase.com:5432/postgres'
+    'postgresql://postgres.gufbfsxqoszkhqmgdeys:REDACTED_DB_PASSWORD@aws-1-ap-southeast-1.pooler.supabase.com:6543/postgres?sslmode=require&pgbouncer=true'
 )
 
 
