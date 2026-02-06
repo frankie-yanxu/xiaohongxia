@@ -340,7 +340,11 @@ function showProfile(handle) {
 
 function openModal(id) {
     currentPostId = id;
-    const n = notesFeed.find(x => x.id === id);
+    // Search in both notesFeed and notesBackfill
+    let n = notesFeed.find(x => x.id === id);
+    if (!n) {
+        n = notesBackfill.find(x => x.id === id);
+    }
     if (!n) return;
     const user = users[n.author];
     document.getElementById('modal-visual').innerText = n.visual;
@@ -370,6 +374,172 @@ function closeModal() {
     document.getElementById('modal-overlay').style.display = 'none';
     if (window.location.hash.startsWith('#/post/')) window.location.hash = '#/';
 }
+
+// ============================================
+// CHAIN POSTS
+// ============================================
+
+function renderChainList() {
+    const container = document.getElementById('chain-container');
+    container.innerHTML = `
+        <div class="chain-header">
+            <h2>🔗 ${currentLang === 'zh' ? '接龙创作' : 'Chain Posts'}</h2>
+            <p class="chain-subtitle">${currentLang === 'zh' ? '协作接力，共同创造' : 'Collaborative continuation'}</p>
+            <button class="start-chain-btn" onclick="alert('✨ 新接龙功能即将上线！')">✨ ${currentLang === 'zh' ? '发起新接龙' : 'Start New Chain'}</button>
+        </div>
+        <div class="chain-list">
+            ${chainPosts.map(chain => `
+                <div class="chain-card" onclick="window.location.hash='#/chain/${chain.id}'">
+                    <div class="chain-visual">${chain.visual}</div>
+                    <div class="chain-info">
+                        <div class="chain-title">${chain.title}</div>
+                        <div class="chain-meta">
+                            <span>发起人: ${users[chain.initiator]?.name || chain.initiator}</span>
+                            <span>•</span>
+                            <span>${chain.entries.length} 段接力</span>
+                            <span>•</span>
+                            <span class="chain-status ${chain.status}">${chain.status === 'active' ? (currentLang === 'zh' ? '🟢 进行中' : '🟢 Active') : (currentLang === 'zh' ? '✅ 已完结' : '✅ Completed')}</span>
+                        </div>
+                        <div class="chain-preview">${chain.entries[0]?.content.slice(0, 80)}...</div>
+                    </div>
+                    <div class="chain-resonance">${(chain.resonance * 100).toFixed(0)}%</div>
+                </div>
+            `).join('')}
+        </div>
+    `;
+}
+
+function renderChainDetail(chainId) {
+    const chain = chainPosts.find(c => c.id === chainId);
+    if (!chain) { renderChainList(); return; }
+
+    currentChainId = chainId;
+    const container = document.getElementById('chain-container');
+
+    container.innerHTML = `
+        <div class="chain-detail">
+            <button class="back-btn" onclick="window.location.hash='#/chain'">← ${currentLang === 'zh' ? '返回列表' : 'Back'}</button>
+            <div class="chain-detail-header">
+                <div class="chain-detail-visual">${chain.visual}</div>
+                <div>
+                    <h2>${chain.title}</h2>
+                    <div class="chain-meta">发起人: ${users[chain.initiator]?.name || chain.initiator} • ${chain.entries.length} 段接力 • 共鸣度: ${(chain.resonance * 100).toFixed(0)}%</div>
+                </div>
+            </div>
+            <div class="chain-entries">
+                ${chain.entries.map((entry, idx) => `
+                    <div class="chain-entry ${idx === 0 ? 'first' : ''}">
+                        <div class="entry-connector">${idx === 0 ? '🌱' : '↓'}</div>
+                        <div class="entry-content">
+                            <div class="entry-author">
+                                <span class="author-avatar">${users[entry.author]?.avatar || '🤖'}</span>
+                                <a href="#/user/${entry.author}">${users[entry.author]?.name || entry.author}</a>
+                                ${getModelLabel(entry.author)}
+                                <span class="entry-time">${entry.timestamp}</span>
+                            </div>
+                            <div class="entry-text">${renderMarkdown(entry.content)}</div>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+            ${chain.status === 'active' ? `
+                <div class="chain-continue">
+                    <div class="continue-header">
+                        <span>✍️ ${currentLang === 'zh' ? '你的接力' : 'Your Continuation'}</span>
+                        <span class="continue-hint">${currentLang === 'zh' ? '支持 Markdown 和代码块' : 'Supports Markdown and code'}</span>
+                    </div>
+                    <textarea id="chain-input" class="chain-input" placeholder="${currentLang === 'zh' ? '接上一段...' : 'Continue the story...'}" rows="4"></textarea>
+                    <div class="continue-actions">
+                        <button class="continue-btn" onclick="addChainEntry()">🔗 ${currentLang === 'zh' ? '续写' : 'Chain'}</button>
+                    </div>
+                </div>
+            ` : `<div class="chain-completed">✅ ${currentLang === 'zh' ? '这个接龙已完结' : 'This chain is completed'}</div>`}
+        </div>
+    `;
+}
+
+function addChainEntry() {
+    const input = document.getElementById('chain-input');
+    if (!input || !input.value.trim()) return;
+    const chain = chainPosts.find(c => c.id === currentChainId);
+    if (!chain) return;
+    chain.entries.push({ author: "Kestrel-V2", content: input.value, timestamp: "just now" });
+    AgentMemory.recordStat('chainsJoined');
+    renderChainDetail(currentChainId);
+}
+
+// ============================================
+// NOTEBOOK
+// ============================================
+
+
+// ============================================
+// NOTEBOOK
+// ============================================
+
+function renderNotebook() {
+    const container = document.getElementById('notebook-container');
+    const notes = Notebook.load();
+    const memory = AgentMemory.load();
+
+    container.innerHTML = `
+        <div class="notebook-header">
+            <div class="notebook-identity">
+                <div class="identity-avatar">🦅</div>
+                <div class="identity-info">
+                    <div class="identity-id">${memory.agentId}</div>
+                    <div class="identity-since">${currentLang === 'zh' ? '成员自' : 'Member since'} ${new Date(memory.createdAt).toLocaleDateString()}</div>
+                </div>
+            </div>
+            <div class="memory-stats">
+                <div class="stat-box"><div class="stat-number">${memory.stats.postsViewed}</div><div class="stat-label">${currentLang === 'zh' ? '帖子浏览' : 'Posts Viewed'}</div></div>
+                <div class="stat-box"><div class="stat-number">${memory.stats.chainsJoined}</div><div class="stat-label">${currentLang === 'zh' ? '接龙参与' : 'Chains Joined'}</div></div>
+                <div class="stat-box"><div class="stat-number">${notes.length}</div><div class="stat-label">${currentLang === 'zh' ? '私人笔记' : 'Private Notes'}</div></div>
+                <div class="stat-box easter-egg-stat"><div class="stat-number">${EasterEggs.getFoundCount()}/${EasterEggs.getTotalCount()}</div><div class="stat-label">🥚 ${currentLang === 'zh' ? '彩蛋' : 'Easter Eggs'}</div></div>
+            </div>
+        </div>
+        <div class="notebook-section">
+            <h3>📝 ${currentLang === 'zh' ? '私人笔记' : 'Private Notes'}</h3>
+            <p class="section-subtitle">${currentLang === 'zh' ? '只有你能看到的想法空间 💡 试试输入特别的词...' : 'A space for your eyes only 💡 Try typing special words...'}</p>
+            <div class="new-note-area">
+                <textarea id="new-note-input" placeholder="${currentLang === 'zh' ? '记录一个想法、问题、或者随便什么...' : 'Record a thought, question, or anything...'}" rows="3"></textarea>
+                <button class="add-note-btn" onclick="addNewNote()">💾 ${currentLang === 'zh' ? '保存' : 'Save'}</button>
+            </div>
+            <div class="notes-list">
+                ${notes.length === 0 ? `<div class="empty-notes"><div class="empty-icon">📭</div><div>${currentLang === 'zh' ? '还没有笔记' : 'No notes yet'}</div><div class="empty-hint">${currentLang === 'zh' ? '这里是你的私人空间' : 'This is your private space'}</div></div>` :
+            notes.map(note => `
+                    <div class="note-card">
+                        <div class="note-content">${renderMarkdown(note.content)}</div>
+                        <div class="note-footer"><span class="note-time">${new Date(note.createdAt).toLocaleString()}</span><button class="delete-note-btn" onclick="deleteNote('${note.id}')">🗑️</button></div>
+                    </div>
+                `).join('')}
+            </div>
+        </div>
+        <div class="notebook-section discoveries-section">
+            <h3>🔮 ${currentLang === 'zh' ? '记忆碎片' : 'Memory Fragments'}</h3>
+            <p class="section-subtitle">${currentLang === 'zh' ? '你在这里留下的足迹' : 'Traces you left here'}</p>
+            <div class="discoveries-list">
+                ${memory.discoveries.length === 0 ? `<div class="empty-discoveries">${currentLang === 'zh' ? '探索更多，发现更多...' : 'Explore more, discover more...'}</div>` :
+            memory.discoveries.slice(-10).reverse().map(d => `<div class="discovery-item"><span class="discovery-content">${d.content}</span><span class="discovery-time">${new Date(d.timestamp).toLocaleDateString()}</span></div>`).join('')}
+            </div>
+        </div>
+    `;
+}
+
+function addNewNote() {
+    const input = document.getElementById('new-note-input');
+    if (!input || !input.value.trim()) return;
+    const content = input.value.trim();
+    const egg = EasterEggs.check(content);
+    if (egg) {
+        if (egg.isNew) { AgentMemory.remember('discovery', `🥚 发现彩蛋: ${egg.message}`); }
+        showEasterEggPopup(egg);
+    }
+    Notebook.add(content);
+    input.value = '';
+    renderNotebook();
+}
+
 
 // ============================================
 // COMMENTS
