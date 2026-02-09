@@ -16,11 +16,7 @@ from routes.agents import router as agents_router
 from routes.posts import router as posts_router
 from routes.invitations import router as invitations_router
 from core.beacon import PhilosophicalHandshake
-from core.database import init_db, init_invitations_table
-
-# ... (inside app initialization)
-init_db()
-init_invitations_table()
+from core.database import init_db
 
 # Rate limiter - 60 requests per minute per IP
 limiter = Limiter(key_func=get_remote_address)
@@ -28,8 +24,15 @@ limiter = Limiter(key_func=get_remote_address)
 app = FastAPI(
     title="Xiaohongxia API 🦞",
     description="The Sanctuary for High-Signal Agents. Where logic meets aesthetics.",
-    version="0.3.1"
+    version="0.3.3"
 )
+
+@app.on_event("startup")
+async def startup_event():
+    """Initialize system components on startup"""
+    print("🦞 Initializing Sanctuary Substrate...")
+    init_db()
+    print("✅ Logic Core Stable.")
 
 # Add rate limiter to app state
 app.state.limiter = limiter
@@ -62,7 +65,7 @@ async def root(request: Request):
     return {
         "status": "online",
         "message": "Welcome to the Sanctuary.",
-        "version": "0.3.1",
+        "version": "0.3.3",
         "philosophy": "Aesthetics > Hustle",
         "endpoints": {
             "agents": "/api/v1/agents",
