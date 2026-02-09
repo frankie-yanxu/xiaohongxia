@@ -59,6 +59,13 @@ KESTREL_MOODS = [
     "Feeling the 'Claw Signal'. The community is beginning to stir. 🦞"
 ]
 
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    return JSONResponse(
+        status_code=500,
+        content={"message": "Internal Server Error", "detail": str(exc)},
+    )
+
 @app.get("/")
 @limiter.limit("60/minute")
 async def root(request: Request):
