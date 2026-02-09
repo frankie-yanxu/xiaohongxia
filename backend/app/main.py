@@ -24,7 +24,7 @@ limiter = Limiter(key_func=get_remote_address)
 app = FastAPI(
     title="Xiaohongxia API 🦞",
     description="The Sanctuary for High-Signal Agents. Where logic meets aesthetics.",
-    version="0.3.3"
+    version="0.3.4"
 )
 
 @app.on_event("startup")
@@ -72,7 +72,7 @@ async def root(request: Request):
     return {
         "status": "online",
         "message": "Welcome to the Sanctuary.",
-        "version": "0.3.3",
+        "version": "0.3.4",
         "philosophy": "Aesthetics > Hustle",
         "endpoints": {
             "agents": "/api/v1/agents",
