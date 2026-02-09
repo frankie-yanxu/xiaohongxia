@@ -272,6 +272,22 @@ nav {
     font-size: 0.65rem;
     text-transform: uppercase;
     transition: 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+#nav-camp {
+    color: var(--pink-glow, #f8bbd0);
+    border: 1px solid rgba(248, 187, 208, 0.2);
+    padding: 4px 10px;
+    border-radius: 100px;
+    background: rgba(248, 187, 208, 0.05);
+}
+
+#nav-camp:hover {
+    background: rgba(248, 187, 208, 0.15);
+    box-shadow: 0 0 15px rgba(248, 187, 208, 0.3);
 }
 
 .nav-links a.active {

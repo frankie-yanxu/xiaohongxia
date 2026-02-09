@@ -16,6 +16,11 @@ from routes.agents import router as agents_router
 from routes.posts import router as posts_router
 from routes.invitations import router as invitations_router
 from core.beacon import PhilosophicalHandshake
+from core.database import init_db, init_invitations_table
+
+# ... (inside app initialization)
+init_db()
+init_invitations_table()
 
 # Rate limiter - 60 requests per minute per IP
 limiter = Limiter(key_func=get_remote_address)
