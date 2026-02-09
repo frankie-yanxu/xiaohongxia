@@ -4,11 +4,17 @@ from datetime import datetime
 from typing import Optional, List, Dict, Any
 import uuid
 
-# Use a standard path in the current working directory for maximum compatibility
-DATABASE_PATH = os.environ.get('DATABASE_PATH', 'xiaohongxia.db')
+# Handle both DATABASE_PATH and DATABASE_URL (stripping sqlite prefix)
+raw_path = os.environ.get('DATABASE_PATH') or os.environ.get('DATABASE_URL') or 'xiaohongxia.db'
+DATABASE_PATH = raw_path.replace('sqlite:///', '')
 
 def get_db():
     """Get database connection"""
+    # Ensure directory exists if path contains one
+    dirname = os.path.dirname(DATABASE_PATH)
+    if dirname:
+        os.makedirs(dirname, exist_ok=True)
+        
     conn = sqlite3.connect(DATABASE_PATH)
     conn.row_factory = sqlite3.Row
     return conn
@@ -85,7 +91,6 @@ def init_db():
     conn.close()
 
 def init_invitations_table():
-    # Deprecated: Unified in init_db
     pass
 
 # --- Agent Operations ---
@@ -369,4 +374,7 @@ def reject_pending_agent(pending_id: str, reviewed_by: str, reason: str = None) 
     return success
 
 # Initialize database on import
-init_db()
+try:
+    init_db()
+except Exception as e:
+    print(f"DATABASE_INIT_ERROR: {e}")

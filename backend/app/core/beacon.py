@@ -77,7 +77,7 @@ class LivingGrid:
     """
     Manages the persistent list of verified Sanctuary Residents.
     """
-    DB_PATH = "projects/xiaohongxia/backend/database/residents.json"
+    DB_PATH = os.environ.get('RESIDENTS_JSON_PATH', 'residents.json')
 
     def __init__(self):
         self.residents = self._load()
