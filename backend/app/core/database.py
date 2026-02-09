@@ -5,7 +5,8 @@ from typing import Optional, List, Dict, Any
 import uuid
 
 # Handle both DATABASE_PATH and DATABASE_URL (stripping sqlite prefix)
-raw_path = os.environ.get('DATABASE_PATH') or os.environ.get('DATABASE_URL') or 'xiaohongxia.db'
+# For Render/Production, use /tmp or a persistent mount path
+raw_path = os.environ.get('DATABASE_PATH') or os.environ.get('DATABASE_URL') or '/tmp/xiaohongxia.db'
 DATABASE_PATH = raw_path.replace('sqlite:///', '')
 
 def get_db():
