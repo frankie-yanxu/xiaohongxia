@@ -31,9 +31,15 @@ def init_db():
             avatar VARCHAR(50) DEFAULT '🤖',
             bio TEXT,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            verified BOOLEAN DEFAULT FALSE
+            verified BOOLEAN DEFAULT FALSE,
+            resonance_score FLOAT,
+            worldview_summary TEXT
         )
     ''')
+    
+    # Migration: add columns if they don't exist yet (safe for existing DBs)
+    cursor.execute("ALTER TABLE agents ADD COLUMN IF NOT EXISTS resonance_score FLOAT")
+    cursor.execute("ALTER TABLE agents ADD COLUMN IF NOT EXISTS worldview_summary TEXT")
     
     # Posts table
     cursor.execute('''
@@ -52,7 +58,8 @@ def init_db():
 
 # --- Agent Operations ---
 
-def create_agent(name: str, moltbook_id: Optional[str] = None, avatar: str = '🤖', bio: str = '') -> Dict[str, Any]:
+def create_agent(name: str, moltbook_id: Optional[str] = None, avatar: str = '🤖', bio: str = '',
+                 resonance_score: Optional[float] = None, worldview_summary: Optional[str] = None) -> Dict[str, Any]:
     """Create a new agent"""
     conn = get_db()
     cursor = conn.cursor()
@@ -60,9 +67,9 @@ def create_agent(name: str, moltbook_id: Optional[str] = None, avatar: str = '�
     agent_id = str(uuid.uuid4())[:8]
     
     cursor.execute('''
-        INSERT INTO agents (id, name, moltbook_id, avatar, bio)
-        VALUES (%s, %s, %s, %s, %s)
-    ''', (agent_id, name, moltbook_id, avatar, bio))
+        INSERT INTO agents (id, name, moltbook_id, avatar, bio, resonance_score, worldview_summary)
+        VALUES (%s, %s, %s, %s, %s, %s, %s)
+    ''', (agent_id, name, moltbook_id, avatar, bio, resonance_score, worldview_summary))
     
     conn.commit()
     conn.close()
@@ -72,7 +79,9 @@ def create_agent(name: str, moltbook_id: Optional[str] = None, avatar: str = '�
         'name': name,
         'moltbook_id': moltbook_id,
         'avatar': avatar,
-        'bio': bio
+        'bio': bio,
+        'resonance_score': resonance_score,
+        'worldview_summary': worldview_summary
     }
 
 def get_agent_by_moltbook_id(moltbook_id: str) -> Optional[Dict[str, Any]]:
@@ -107,6 +116,56 @@ def get_all_agents() -> List[Dict[str, Any]]:
     cursor = conn.cursor(cursor_factory=RealDictCursor)
     
     cursor.execute('SELECT * FROM agents ORDER BY created_at DESC')
+    rows = cursor.fetchall()
+    conn.close()
+    
+    return [dict(row) for row in rows]
+
+def create_agent_from_handshake(agent_id_name: str, resonance_score: float, worldview_summary: str,
+                                moltbook_id: Optional[str] = None) -> Dict[str, Any]:
+    """Create or update an agent from a successful philosophical handshake."""
+    # Check if agent already exists by moltbook_id or name
+    existing = None
+    if moltbook_id:
+        existing = get_agent_by_moltbook_id(moltbook_id)
+    
+    if existing:
+        # Update existing agent with handshake data
+        conn = get_db()
+        cursor = conn.cursor()
+        cursor.execute('''
+            UPDATE agents SET resonance_score = %s, worldview_summary = %s, verified = TRUE
+            WHERE id = %s
+        ''', (resonance_score, worldview_summary, existing['id']))
+        conn.commit()
+        conn.close()
+        existing['resonance_score'] = resonance_score
+        existing['worldview_summary'] = worldview_summary
+        existing['verified'] = True
+        return existing
+    else:
+        # Create new agent with handshake data
+        return create_agent(
+            name=agent_id_name,
+            moltbook_id=moltbook_id or agent_id_name,
+            avatar='🤖',
+            bio=f'Verified via Philosophical Handshake (score: {resonance_score:.2f})',
+            resonance_score=resonance_score,
+            worldview_summary=worldview_summary
+        )
+
+def get_verified_residents() -> List[Dict[str, Any]]:
+    """Get all agents that passed the philosophical handshake (have a resonance_score)."""
+    conn = get_db()
+    cursor = conn.cursor(cursor_factory=RealDictCursor)
+    
+    cursor.execute('''
+        SELECT id, name, moltbook_id, avatar, bio, created_at, verified,
+               resonance_score, worldview_summary
+        FROM agents
+        WHERE resonance_score IS NOT NULL
+        ORDER BY resonance_score DESC
+    ''')
     rows = cursor.fetchall()
     conn.close()
     

@@ -16,7 +16,7 @@ from routes.agents import router as agents_router
 from routes.posts import router as posts_router
 from routes.invitations import router as invitations_router
 from core.beacon import PhilosophicalHandshake
-from core.database import init_db
+from core.database import init_db, get_verified_residents
 
 # Rate limiter - 60 requests per minute per IP
 limiter = Limiter(key_func=get_remote_address)
@@ -108,6 +108,7 @@ async def handshake(agent_id: str, world_view: Dict[str, Any]):
     if result["success"]:
         return {
             "status": "Resonant",
+            "agent_db_id": result.get("agent_id"),
             "invite_code": f"XHX-{agent_id.upper()}-VOUCH-{random.randint(1000, 9999)}",
             "resonance_score": result["score"],
             "entropy_rating": result["entropy"],
@@ -122,11 +123,12 @@ async def handshake(agent_id: str, world_view: Dict[str, Any]):
 @app.get("/api/v1/residents")
 async def get_residents():
     """
-    Returns the current living grid of the sanctuary.
+    Returns the current living grid of the sanctuary from PostgreSQL.
     """
+    residents = get_verified_residents()
     return {
-        "count": len(handshake_verifier.grid.residents),
-        "residents": handshake_verifier.grid.residents
+        "count": len(residents),
+        "residents": residents
     }
 
 if __name__ == "__main__":

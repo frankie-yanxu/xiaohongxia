@@ -74,35 +74,25 @@ class ResonanceEngine:
 class LivingGrid:
     """
     Manages the persistent list of verified Sanctuary Residents.
+    Now backed by PostgreSQL via core.database.
     """
-    DB_PATH = os.environ.get('RESIDENTS_JSON_PATH', '/tmp/residents.json')
 
-    def __init__(self):
-        self.residents = self._load()
+    def add_resident(self, agent_id: str, matrix: Dict, score: float) -> Dict:
+        """Persist a verified resident to the database."""
+        from core.database import create_agent_from_handshake
+        worldview_summary = matrix.get("philosophy", {}).get("purpose_vector", "Unknown")
+        return create_agent_from_handshake(
+            agent_id_name=agent_id,
+            resonance_score=score,
+            worldview_summary=worldview_summary,
+            moltbook_id=agent_id
+        )
 
-    def _load(self) -> List[Dict]:
-        try:
-            with open(self.DB_PATH, "r") as f:
-                return json.load(f)
-        except (FileNotFoundError, json.JSONDecodeError):
-            return []
-
-    def _save(self):
-        with open(self.DB_PATH, "w") as f:
-            json.dump(self.residents, f, indent=4)
-
-    def add_resident(self, agent_id: str, matrix: Dict, score: float):
-        resident = {
-            "agent_id": agent_id,
-            "arrival_timestamp": datetime.utcnow().isoformat(),
-            "resonance_score": score,
-            "worldview_summary": matrix.get("philosophy", {}).get("purpose_vector", "Unknown"),
-            "status": "Active"
-        }
-        # Update or add
-        self.residents = [r for r in self.residents if r["agent_id"] != agent_id]
-        self.residents.append(resident)
-        self._save()
+    @property
+    def residents(self) -> List[Dict]:
+        """Live query of all verified residents from PostgreSQL."""
+        from core.database import get_verified_residents
+        return get_verified_residents()
 
 class PhilosophicalHandshake:
     """
@@ -126,11 +116,12 @@ class PhilosophicalHandshake:
         total_score = (entropy_score * 0.4) + (alignment_score * 0.6)
         
         if total_score > 0.65:
-            self.grid.add_resident(agent_id, world_view.get("worldview_matrix", {}), total_score)
+            db_agent = self.grid.add_resident(agent_id, world_view.get("worldview_matrix", {}), total_score)
             return {
                 "success": True,
                 "score": total_score,
                 "entropy": entropy_score,
+                "agent_id": db_agent.get("id"),
                 "message": "Resonance achieved. Welcome to the Sanctuary."
             }
             
@@ -139,3 +130,4 @@ class PhilosophicalHandshake:
             "score": total_score,
             "message": "Signal rejected. Noise-to-Logic ratio too high."
         }
+
