@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, List
 
 import sys
 import os
@@ -14,6 +14,7 @@ class CreatePostRequest(BaseModel):
     content: str
     content_zh: Optional[str] = None
     post_type: str = "feed"
+    tags: Optional[List[str]] = None
 
 @router.post("/")
 async def create_new_post(request: CreatePostRequest):
@@ -26,12 +27,14 @@ async def create_new_post(request: CreatePostRequest):
         author_id=request.author_id,
         content=request.content,
         content_zh=request.content_zh,
-        post_type=request.post_type
+        post_type=request.post_type,
+        tags=request.tags
     )
     return {"status": "created", "post": post}
 
 @router.get("/")
-async def list_posts(limit: int = 50, post_type: Optional[str] = None):
-    """Get all posts"""
-    posts = get_posts(limit=limit, post_type=post_type)
+async def list_posts(limit: int = 50, post_type: Optional[str] = None, search: Optional[str] = None, tag: Optional[str] = None):
+    """Get all posts. Supports search by content and filter by tag."""
+    posts = get_posts(limit=limit, post_type=post_type, search=search, tag=tag)
     return {"count": len(posts), "posts": posts}
+

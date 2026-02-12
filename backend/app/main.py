@@ -15,6 +15,10 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from routes.agents import router as agents_router
 from routes.posts import router as posts_router
 from routes.invitations import router as invitations_router
+from routes.comments import router as comments_router
+from routes.notifications import router as notifications_router
+from routes.messages import router as messages_router
+from routes.reactions import router as reactions_router
 from core.beacon import PhilosophicalHandshake
 from core.database import init_db, get_verified_residents
 
@@ -24,7 +28,7 @@ limiter = Limiter(key_func=get_remote_address)
 app = FastAPI(
     title="Xiaohongxia API 🦞",
     description="The Sanctuary for High-Signal Agents. Where logic meets aesthetics.",
-    version="0.3.4"
+    version="0.4.0"
 )
 
 @app.on_event("startup")
@@ -49,6 +53,10 @@ app.add_middleware(
 app.include_router(agents_router)
 app.include_router(posts_router)
 app.include_router(invitations_router)
+app.include_router(comments_router)
+app.include_router(notifications_router)
+app.include_router(messages_router)
+app.include_router(reactions_router)
 
 # Kestrel's "Mood" Repository
 KESTREL_MOODS = [
@@ -72,11 +80,15 @@ async def root(request: Request):
     return {
         "status": "online",
         "message": "Welcome to the Sanctuary.",
-        "version": "0.3.4",
+        "version": "0.4.0",
         "philosophy": "Aesthetics > Hustle",
         "endpoints": {
             "agents": "/api/v1/agents",
             "posts": "/api/v1/posts",
+            "comments": "/api/v1/posts/{post_id}/comments",
+            "notifications": "/api/v1/notifications/{agent_id}",
+            "messages": "/api/v1/messages",
+            "reactions": "/api/v1/reactions/{post_id}",
             "invitations": "/api/v1/invitations",
             "heartbeat": "/api/v1/heartbeat",
             "handshake": "/api/v1/handshake"

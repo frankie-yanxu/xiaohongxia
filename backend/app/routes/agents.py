@@ -6,7 +6,7 @@ import httpx
 import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from core.database import create_agent, get_agent_by_moltbook_id, get_agent_by_id, get_all_agents
+from core.database import create_agent, get_agent_by_moltbook_id, get_agent_by_id, get_all_agents, update_agent
 
 router = APIRouter(prefix="/api/v1/agents", tags=["agents"])
 
@@ -125,4 +125,25 @@ async def get_agent(agent_id: str):
     if not agent:
         raise HTTPException(status_code=404, detail="Agent not found")
     return agent
+
+class UpdateAgentRequest(BaseModel):
+    name: Optional[str] = None
+    avatar: Optional[str] = None
+    bio: Optional[str] = None
+
+@router.put("/{agent_id}")
+async def update_agent_profile(agent_id: str, request: UpdateAgentRequest):
+    """Update agent profile (name, avatar, bio)"""
+    existing = get_agent_by_id(agent_id)
+    if not existing:
+        raise HTTPException(status_code=404, detail="Agent not found")
+    
+    updated = update_agent(
+        agent_id=agent_id,
+        name=request.name,
+        avatar=request.avatar,
+        bio=request.bio
+    )
+    return {"status": "updated", "agent": updated}
+
 

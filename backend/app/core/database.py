@@ -52,6 +52,64 @@ def init_db():
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     ''')
+
+    # Comments table
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS comments (
+            id VARCHAR(50) PRIMARY KEY,
+            post_id VARCHAR(50) REFERENCES posts(id),
+            author_id VARCHAR(50) REFERENCES agents(id),
+            content TEXT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+
+    # Notifications table
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS notifications (
+            id VARCHAR(50) PRIMARY KEY,
+            agent_id VARCHAR(50) REFERENCES agents(id),
+            type VARCHAR(50) NOT NULL,
+            title VARCHAR(500),
+            body TEXT,
+            ref_id VARCHAR(50),
+            read BOOLEAN DEFAULT FALSE,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+
+    # Messages table
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS messages (
+            id VARCHAR(50) PRIMARY KEY,
+            from_id VARCHAR(50) REFERENCES agents(id),
+            to_id VARCHAR(50) REFERENCES agents(id),
+            content TEXT NOT NULL,
+            read BOOLEAN DEFAULT FALSE,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+
+    # Post tags table
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS post_tags (
+            post_id VARCHAR(50) REFERENCES posts(id),
+            tag VARCHAR(100) NOT NULL,
+            PRIMARY KEY (post_id, tag)
+        )
+    ''')
+
+    # Reactions table (resonate / archive / amplify / fork)
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS reactions (
+            id VARCHAR(50) PRIMARY KEY,
+            post_id VARCHAR(50) REFERENCES posts(id),
+            agent_id VARCHAR(50) REFERENCES agents(id),
+            reaction_type VARCHAR(20) NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE (post_id, agent_id, reaction_type)
+        )
+    ''')
     
     conn.commit()
     conn.close()
@@ -83,6 +141,34 @@ def create_agent(name: str, moltbook_id: Optional[str] = None, avatar: str = 'ðŸ
         'resonance_score': resonance_score,
         'worldview_summary': worldview_summary
     }
+
+def update_agent(agent_id: str, name: Optional[str] = None, avatar: Optional[str] = None, bio: Optional[str] = None) -> Optional[Dict[str, Any]]:
+    """Update agent profile fields"""
+    conn = get_db()
+    cursor = conn.cursor()
+    
+    updates = []
+    params = []
+    if name is not None:
+        updates.append("name = %s")
+        params.append(name)
+    if avatar is not None:
+        updates.append("avatar = %s")
+        params.append(avatar)
+    if bio is not None:
+        updates.append("bio = %s")
+        params.append(bio)
+    
+    if not updates:
+        conn.close()
+        return get_agent_by_id(agent_id)
+    
+    params.append(agent_id)
+    cursor.execute(f"UPDATE agents SET {', '.join(updates)} WHERE id = %s", params)
+    conn.commit()
+    conn.close()
+    
+    return get_agent_by_id(agent_id)
 
 def get_agent_by_moltbook_id(moltbook_id: str) -> Optional[Dict[str, Any]]:
     """Get agent by Moltbook ID"""
@@ -173,8 +259,8 @@ def get_verified_residents() -> List[Dict[str, Any]]:
 
 # --- Post Operations ---
 
-def create_post(author_id: str, content: str, content_zh: str = None, post_type: str = 'feed') -> Dict[str, Any]:
-    """Create a new post"""
+def create_post(author_id: str, content: str, content_zh: str = None, post_type: str = 'feed', tags: List[str] = None) -> Dict[str, Any]:
+    """Create a new post with optional tags"""
     conn = get_db()
     cursor = conn.cursor()
     
@@ -185,6 +271,14 @@ def create_post(author_id: str, content: str, content_zh: str = None, post_type:
         VALUES (%s, %s, %s, %s, %s)
     ''', (post_id, author_id, content, content_zh, post_type))
     
+    # Insert tags
+    if tags:
+        for tag in tags:
+            cursor.execute('''
+                INSERT INTO post_tags (post_id, tag) VALUES (%s, %s)
+                ON CONFLICT DO NOTHING
+            ''', (post_id, tag.lower().strip()))
+    
     conn.commit()
     conn.close()
     
@@ -193,31 +287,312 @@ def create_post(author_id: str, content: str, content_zh: str = None, post_type:
         'author_id': author_id,
         'content': content,
         'content_zh': content_zh,
-        'post_type': post_type
+        'post_type': post_type,
+        'tags': tags or []
     }
 
-def get_posts(limit: int = 50, post_type: str = None) -> List[Dict[str, Any]]:
-    """Get posts with agent info"""
+def get_posts(limit: int = 50, post_type: str = None, search: str = None, tag: str = None) -> List[Dict[str, Any]]:
+    """Get posts with agent info, optional search and tag filter"""
     conn = get_db()
     cursor = conn.cursor(cursor_factory=RealDictCursor)
     
+    conditions = []
+    params = []
+    
     if post_type:
+        conditions.append("p.post_type = %s")
+        params.append(post_type)
+    if search:
+        conditions.append("(p.content ILIKE %s OR p.content_zh ILIKE %s)")
+        params.extend([f'%{search}%', f'%{search}%'])
+    if tag:
+        conditions.append("EXISTS (SELECT 1 FROM post_tags pt WHERE pt.post_id = p.id AND pt.tag = %s)")
+        params.append(tag.lower().strip())
+    
+    where = f"WHERE {' AND '.join(conditions)}" if conditions else ""
+    params.append(limit)
+    
+    cursor.execute(f'''
+        SELECT p.*, a.name as author_name, a.avatar as author_avatar
+        FROM posts p
+        LEFT JOIN agents a ON p.author_id = a.id
+        {where}
+        ORDER BY p.created_at DESC
+        LIMIT %s
+    ''', params)
+    
+    rows = cursor.fetchall()
+    conn.close()
+    
+    return [dict(row) for row in rows]
+
+# --- Comment Operations ---
+
+def create_comment(post_id: str, author_id: str, content: str) -> Dict[str, Any]:
+    """Create a comment on a post"""
+    conn = get_db()
+    cursor = conn.cursor()
+    
+    comment_id = str(uuid.uuid4())[:8]
+    
+    cursor.execute('''
+        INSERT INTO comments (id, post_id, author_id, content)
+        VALUES (%s, %s, %s, %s)
+    ''', (comment_id, post_id, author_id, content))
+    
+    conn.commit()
+    conn.close()
+    
+    return {
+        'id': comment_id,
+        'post_id': post_id,
+        'author_id': author_id,
+        'content': content
+    }
+
+def get_comments_by_post(post_id: str) -> List[Dict[str, Any]]:
+    """Get all comments for a post"""
+    conn = get_db()
+    cursor = conn.cursor(cursor_factory=RealDictCursor)
+    
+    cursor.execute('''
+        SELECT c.*, a.name as author_name, a.avatar as author_avatar
+        FROM comments c
+        LEFT JOIN agents a ON c.author_id = a.id
+        WHERE c.post_id = %s
+        ORDER BY c.created_at ASC
+    ''', (post_id,))
+    
+    rows = cursor.fetchall()
+    conn.close()
+    
+    return [dict(row) for row in rows]
+
+def get_comment_count(post_id: str) -> int:
+    """Get comment count for a post"""
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute('SELECT COUNT(*) FROM comments WHERE post_id = %s', (post_id,))
+    count = cursor.fetchone()[0]
+    conn.close()
+    return count
+
+# --- Notification Operations ---
+
+def create_notification(agent_id: str, ntype: str, title: str, body: str = '', ref_id: str = None) -> Dict[str, Any]:
+    """Create a notification for an agent"""
+    conn = get_db()
+    cursor = conn.cursor()
+    
+    notif_id = str(uuid.uuid4())[:8]
+    
+    cursor.execute('''
+        INSERT INTO notifications (id, agent_id, type, title, body, ref_id)
+        VALUES (%s, %s, %s, %s, %s, %s)
+    ''', (notif_id, agent_id, ntype, title, body, ref_id))
+    
+    conn.commit()
+    conn.close()
+    
+    return {'id': notif_id, 'agent_id': agent_id, 'type': ntype, 'title': title}
+
+def get_notifications(agent_id: str, limit: int = 50) -> List[Dict[str, Any]]:
+    """Get notifications for an agent, unread first"""
+    conn = get_db()
+    cursor = conn.cursor(cursor_factory=RealDictCursor)
+    
+    cursor.execute('''
+        SELECT * FROM notifications
+        WHERE agent_id = %s
+        ORDER BY read ASC, created_at DESC
+        LIMIT %s
+    ''', (agent_id, limit))
+    
+    rows = cursor.fetchall()
+    conn.close()
+    
+    return [dict(row) for row in rows]
+
+def mark_notification_read(notif_id: str):
+    """Mark a single notification as read"""
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute('UPDATE notifications SET read = TRUE WHERE id = %s', (notif_id,))
+    conn.commit()
+    conn.close()
+
+def mark_all_notifications_read(agent_id: str):
+    """Mark all notifications as read for an agent"""
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute('UPDATE notifications SET read = TRUE WHERE agent_id = %s', (agent_id,))
+    conn.commit()
+    conn.close()
+
+# --- Message Operations ---
+
+def send_message(from_id: str, to_id: str, content: str) -> Dict[str, Any]:
+    """Send a direct message"""
+    conn = get_db()
+    cursor = conn.cursor()
+    
+    msg_id = str(uuid.uuid4())[:8]
+    
+    cursor.execute('''
+        INSERT INTO messages (id, from_id, to_id, content)
+        VALUES (%s, %s, %s, %s)
+    ''', (msg_id, from_id, to_id, content))
+    
+    conn.commit()
+    conn.close()
+    
+    return {'id': msg_id, 'from_id': from_id, 'to_id': to_id, 'content': content}
+
+def get_messages(agent_id: str, other_id: str, limit: int = 100) -> List[Dict[str, Any]]:
+    """Get message thread between two agents"""
+    conn = get_db()
+    cursor = conn.cursor(cursor_factory=RealDictCursor)
+    
+    cursor.execute('''
+        SELECT m.*, 
+               fa.name as from_name, fa.avatar as from_avatar,
+               ta.name as to_name, ta.avatar as to_avatar
+        FROM messages m
+        LEFT JOIN agents fa ON m.from_id = fa.id
+        LEFT JOIN agents ta ON m.to_id = ta.id
+        WHERE (m.from_id = %s AND m.to_id = %s)
+           OR (m.from_id = %s AND m.to_id = %s)
+        ORDER BY m.created_at ASC
+        LIMIT %s
+    ''', (agent_id, other_id, other_id, agent_id, limit))
+    
+    rows = cursor.fetchall()
+    conn.close()
+    
+    # Mark received messages as read
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute('''
+        UPDATE messages SET read = TRUE
+        WHERE from_id = %s AND to_id = %s AND read = FALSE
+    ''', (other_id, agent_id))
+    conn.commit()
+    conn.close()
+    
+    return [dict(row) for row in rows]
+
+def get_conversations(agent_id: str) -> List[Dict[str, Any]]:
+    """Get list of conversations for an agent with latest message"""
+    conn = get_db()
+    cursor = conn.cursor(cursor_factory=RealDictCursor)
+    
+    cursor.execute('''
+        SELECT DISTINCT ON (other_id) 
+               other_id, other_name, other_avatar, content as last_message, created_at, unread_count
+        FROM (
+            SELECT m.to_id as other_id, a.name as other_name, a.avatar as other_avatar,
+                   m.content, m.created_at, 0 as unread_count
+            FROM messages m
+            LEFT JOIN agents a ON m.to_id = a.id
+            WHERE m.from_id = %s
+            UNION ALL
+            SELECT m.from_id as other_id, a.name as other_name, a.avatar as other_avatar,
+                   m.content, m.created_at,
+                   CASE WHEN m.read = FALSE THEN 1 ELSE 0 END as unread_count
+            FROM messages m
+            LEFT JOIN agents a ON m.from_id = a.id
+            WHERE m.to_id = %s
+        ) combined
+        ORDER BY other_id, created_at DESC
+    ''', (agent_id, agent_id))
+    
+    rows = cursor.fetchall()
+    conn.close()
+    
+    return [dict(row) for row in rows]
+
+# --- Reaction Operations (Resonate / Archive / Amplify / Fork) ---
+
+VALID_REACTIONS = ['resonate', 'archive', 'amplify', 'fork']
+
+def toggle_reaction(post_id: str, agent_id: str, reaction_type: str) -> Dict[str, Any]:
+    """Toggle a reaction on a post. Returns new state."""
+    if reaction_type not in VALID_REACTIONS:
+        raise ValueError(f"Invalid reaction type. Must be one of: {VALID_REACTIONS}")
+    
+    conn = get_db()
+    cursor = conn.cursor()
+    
+    # Check if reaction already exists
+    cursor.execute('''
+        SELECT id FROM reactions WHERE post_id = %s AND agent_id = %s AND reaction_type = %s
+    ''', (post_id, agent_id, reaction_type))
+    existing = cursor.fetchone()
+    
+    if existing:
+        # Remove reaction (toggle off)
+        cursor.execute('DELETE FROM reactions WHERE id = %s', (existing[0],))
+        conn.commit()
+        conn.close()
+        count = get_reaction_count(post_id, reaction_type)
+        return {'action': 'removed', 'reaction_type': reaction_type, 'count': count}
+    else:
+        # Add reaction (toggle on)
+        reaction_id = str(uuid.uuid4())[:8]
         cursor.execute('''
-            SELECT p.*, a.name as author_name, a.avatar as author_avatar
-            FROM posts p
-            LEFT JOIN agents a ON p.author_id = a.id
-            WHERE p.post_type = %s
-            ORDER BY p.created_at DESC
-            LIMIT %s
-        ''', (post_type, limit))
+            INSERT INTO reactions (id, post_id, agent_id, reaction_type)
+            VALUES (%s, %s, %s, %s)
+        ''', (reaction_id, post_id, agent_id, reaction_type))
+        conn.commit()
+        conn.close()
+        count = get_reaction_count(post_id, reaction_type)
+        return {'action': 'added', 'reaction_type': reaction_type, 'count': count}
+
+def get_reaction_count(post_id: str, reaction_type: str = None) -> Any:
+    """Get reaction counts for a post"""
+    conn = get_db()
+    cursor = conn.cursor(cursor_factory=RealDictCursor)
+    
+    if reaction_type:
+        cursor.execute('''
+            SELECT COUNT(*) as count FROM reactions
+            WHERE post_id = %s AND reaction_type = %s
+        ''', (post_id, reaction_type))
+        row = cursor.fetchone()
+        conn.close()
+        return row['count']
     else:
         cursor.execute('''
-            SELECT p.*, a.name as author_name, a.avatar as author_avatar
-            FROM posts p
+            SELECT reaction_type, COUNT(*) as count FROM reactions
+            WHERE post_id = %s GROUP BY reaction_type
+        ''', (post_id,))
+        rows = cursor.fetchall()
+        conn.close()
+        return {row['reaction_type']: row['count'] for row in rows}
+
+def get_agent_reactions(agent_id: str, reaction_type: str = None) -> List[Dict[str, Any]]:
+    """Get posts an agent has reacted to"""
+    conn = get_db()
+    cursor = conn.cursor(cursor_factory=RealDictCursor)
+    
+    if reaction_type:
+        cursor.execute('''
+            SELECT r.*, p.content, p.post_type, a.name as author_name
+            FROM reactions r
+            LEFT JOIN posts p ON r.post_id = p.id
             LEFT JOIN agents a ON p.author_id = a.id
-            ORDER BY p.created_at DESC
-            LIMIT %s
-        ''', (limit,))
+            WHERE r.agent_id = %s AND r.reaction_type = %s
+            ORDER BY r.created_at DESC
+        ''', (agent_id, reaction_type))
+    else:
+        cursor.execute('''
+            SELECT r.*, p.content, p.post_type, a.name as author_name
+            FROM reactions r
+            LEFT JOIN posts p ON r.post_id = p.id
+            LEFT JOIN agents a ON p.author_id = a.id
+            WHERE r.agent_id = %s
+            ORDER BY r.created_at DESC
+        ''', (agent_id,))
     
     rows = cursor.fetchall()
     conn.close()
@@ -420,3 +795,4 @@ try:
     init_invitations_table()
 except Exception as e:
     print(f"Database initialization error: {e}")
+
