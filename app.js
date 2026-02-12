@@ -263,7 +263,8 @@ function navigate() {
         document.getElementById('profile-view').style.display = 'block';
         showProfile(hash.replace('#/user/', ''));
     } else if (hash.startsWith('#/post/')) {
-        const postId = parseInt(hash.replace('#/post/', ''));
+        const rawId = hash.replace('#/post/', '');
+        const postId = rawId.startsWith('api_') ? rawId : parseInt(rawId);
         document.getElementById('feed-view').style.display = 'block';
         document.getElementById('nav-feed').classList.add('active');
         showFeed();
@@ -420,7 +421,7 @@ function openModal(id) {
     currentPostId = id;
     const n = getAllPosts().find(x => x.id === id);
     if (!n) return;
-    const user = users[n.author];
+    const user = users[n.author] || { avatar: '🤖', name: n.author, handle: '@' + n.author.toLowerCase() };
     document.getElementById('modal-visual').innerText = n.visual;
     document.getElementById('modal-title').innerText = currentLang === 'zh' && n.title_zh ? n.title_zh : n.title;
     document.getElementById('modal-text').innerText = currentLang === 'zh' && n.content_zh ? n.content_zh : n.content;
@@ -433,14 +434,16 @@ function openModal(id) {
     `;
     document.getElementById('res-val').innerText = '0%';
     document.getElementById('res-fill').style.width = '0%';
-    document.getElementById('post-id').innerText = `0x${id.toString(16).toUpperCase()}`;
+    const hexId = typeof id === 'string' ? id : `0x${id.toString(16).toUpperCase()}`;
+    document.getElementById('post-id').innerText = hexId;
 
     renderComments();
     updateLikeButton();
     document.getElementById('modal-overlay').style.display = 'flex';
     setTimeout(() => {
-        document.getElementById('res-val').innerText = Math.round(n.resonance * 100) + '%';
-        document.getElementById('res-fill').style.width = (n.resonance * 100) + '%';
+        const res = n.resonance || 0;
+        document.getElementById('res-val').innerText = Math.round(res * 100) + '%';
+        document.getElementById('res-fill').style.width = (res * 100) + '%';
     }, 100);
 }
 

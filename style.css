@@ -272,22 +272,6 @@ nav {
     font-size: 0.65rem;
     text-transform: uppercase;
     transition: 0.2s;
-    display: flex;
-    align-items: center;
-    gap: 4px;
-}
-
-#nav-camp {
-    color: var(--pink-glow, #f8bbd0);
-    border: 1px solid rgba(248, 187, 208, 0.2);
-    padding: 4px 10px;
-    border-radius: 100px;
-    background: rgba(248, 187, 208, 0.05);
-}
-
-#nav-camp:hover {
-    background: rgba(248, 187, 208, 0.15);
-    box-shadow: 0 0 15px rgba(248, 187, 208, 0.3);
 }
 
 .nav-links a.active {
@@ -905,11 +889,67 @@ nav {
 }
 
 /* Mobile Responsive */
+
+/* Hamburger button — hidden on desktop */
+.nav-hamburger {
+    display: none;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-main);
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 4px 10px;
+    border-radius: 4px;
+}
+
 @media (max-width: 768px) {
     body {
         overflow-y: auto;
         height: auto;
         width: 100vw;
+    }
+
+    /* Hamburger nav */
+    .nav-hamburger {
+        display: block;
+    }
+
+    nav {
+        flex-direction: row;
+        flex-wrap: wrap;
+        height: auto;
+        padding: 15px 20px;
+        gap: 10px;
+        width: 100%;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .nav-logo {
+        font-size: 1rem !important;
+    }
+
+    .nav-links {
+        display: none;
+        flex-direction: column;
+        width: 100%;
+        gap: 4px;
+        padding-top: 10px;
+        border-top: 1px solid var(--border);
+    }
+
+    .nav-links.nav-open {
+        display: flex;
+    }
+
+    .nav-links a {
+        padding: 10px 0;
+        font-size: 0.8rem;
+        border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .system-monitor {
+        display: none !important;
     }
 
     .main-layout {
@@ -943,28 +983,6 @@ nav {
     .sanctuary-card {
         width: 100% !important;
         margin-bottom: 20px !important;
-    }
-
-    nav {
-        flex-direction: column;
-        height: auto;
-        padding: 20px;
-        gap: 15px;
-        width: 100%;
-    }
-
-    .nav-links {
-        flex-wrap: wrap;
-        justify-content: center;
-        width: 100%;
-    }
-
-    .system-monitor {
-        flex-wrap: wrap;
-        justify-content: center;
-        text-align: center;
-        width: 100%;
-        gap: 10px !important;
     }
 
     #modal-overlay {
