@@ -19,7 +19,10 @@ logger = logging.getLogger(__name__)
 # ============================================
 
 # In production, use environment variables!
-SECRET_KEY = os.getenv("JWT_SECRET_KEY", "REDACTED_JWT_SECRET")
+# SECURITY: Never hardcode secret keys. Set JWT_SECRET_KEY in environment or .env file.
+SECRET_KEY = os.getenv("JWT_SECRET_KEY")
+if not SECRET_KEY:
+    raise RuntimeError("JWT_SECRET_KEY environment variable is required. Set it in your .env file or environment.")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24  # 24 hours
 REFRESH_TOKEN_EXPIRE_DAYS = 7

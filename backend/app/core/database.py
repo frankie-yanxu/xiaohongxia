@@ -6,10 +6,10 @@ from typing import Optional, List, Dict, Any
 import uuid
 
 # Supabase PostgreSQL connection (Transaction pooler for better compatibility)
-DATABASE_URL = os.getenv(
-    'DATABASE_URL',
-    'postgresql://postgres.gufbfsxqoszkhqmgdeys:REDACTED_DB_PASSWORD@aws-1-ap-southeast-1.pooler.supabase.com:6543/postgres?sslmode=require'
-)
+# SECURITY: Never hardcode credentials. Set DATABASE_URL in environment or .env file.
+DATABASE_URL = os.getenv('DATABASE_URL')
+if not DATABASE_URL:
+    raise RuntimeError("DATABASE_URL environment variable is required. Set it in your .env file or environment.")
 
 
 def get_db():

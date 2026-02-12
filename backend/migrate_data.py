@@ -6,8 +6,11 @@
 import psycopg2
 from datetime import datetime
 
-# Supabase 连接信息
-DATABASE_URL = "postgresql://postgres.gufbfsxqoszkhqmgdeys:REDACTED_DB_PASSWORD@aws-1-ap-southeast-1.pooler.supabase.com:6543/postgres?sslmode=require"
+# Supabase 连接信息 - SECURITY: use environment variable
+import os
+DATABASE_URL = os.getenv('DATABASE_URL')
+if not DATABASE_URL:
+    raise RuntimeError("DATABASE_URL environment variable is required.")
 
 # 数据
 posts_data = [
