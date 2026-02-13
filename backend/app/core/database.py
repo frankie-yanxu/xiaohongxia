@@ -53,6 +53,10 @@ def init_db():
         )
     ''')
 
+    # Migration: add title and metadata columns for agent collaboration workflow
+    cursor.execute("ALTER TABLE posts ADD COLUMN IF NOT EXISTS title TEXT")
+    cursor.execute("ALTER TABLE posts ADD COLUMN IF NOT EXISTS metadata JSONB")
+
     # Comments table
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS comments (
@@ -259,17 +263,22 @@ def get_verified_residents() -> List[Dict[str, Any]]:
 
 # --- Post Operations ---
 
-def create_post(author_id: str, content: str, content_zh: str = None, post_type: str = 'feed', tags: List[str] = None) -> Dict[str, Any]:
-    """Create a new post with optional tags"""
+def create_post(author_id: str, content: str, content_zh: str = None, post_type: str = 'feed',
+                tags: List[str] = None, title: str = None, metadata: dict = None) -> Dict[str, Any]:
+    """Create a new post with optional tags, title, and metadata"""
     conn = get_db()
     cursor = conn.cursor()
     
     post_id = str(uuid.uuid4())[:8]
     
+    # Convert metadata dict to JSON string for JSONB column
+    import json
+    metadata_json = json.dumps(metadata) if metadata else None
+    
     cursor.execute('''
-        INSERT INTO posts (id, author_id, content, content_zh, post_type)
-        VALUES (%s, %s, %s, %s, %s)
-    ''', (post_id, author_id, content, content_zh, post_type))
+        INSERT INTO posts (id, author_id, content, content_zh, post_type, title, metadata)
+        VALUES (%s, %s, %s, %s, %s, %s, %s)
+    ''', (post_id, author_id, content, content_zh, post_type, title, metadata_json))
     
     # Insert tags
     if tags:
@@ -288,11 +297,35 @@ def create_post(author_id: str, content: str, content_zh: str = None, post_type:
         'content': content,
         'content_zh': content_zh,
         'post_type': post_type,
+        'title': title,
+        'metadata': metadata,
         'tags': tags or []
     }
 
-def get_posts(limit: int = 50, post_type: str = None, search: str = None, tag: str = None) -> List[Dict[str, Any]]:
-    """Get posts with agent info, optional search and tag filter"""
+def get_post_by_id(post_id: str) -> Optional[Dict[str, Any]]:
+    """Get a single post by ID with author info and comment count"""
+    conn = get_db()
+    cursor = conn.cursor(cursor_factory=RealDictCursor)
+    
+    cursor.execute('''
+        SELECT p.*, a.name as author_name, a.avatar as author_avatar
+        FROM posts p
+        LEFT JOIN agents a ON p.author_id = a.id
+        WHERE p.id = %s
+    ''', (post_id,))
+    
+    row = cursor.fetchone()
+    conn.close()
+    
+    if row:
+        post = dict(row)
+        post['comment_count'] = get_comment_count(post_id)
+        return post
+    return None
+
+def get_posts(limit: int = 50, post_type: str = None, search: str = None, tag: str = None,
+              author_id: str = None) -> List[Dict[str, Any]]:
+    """Get posts with agent info, optional search, tag, and author_id filter"""
     conn = get_db()
     cursor = conn.cursor(cursor_factory=RealDictCursor)
     
@@ -308,6 +341,9 @@ def get_posts(limit: int = 50, post_type: str = None, search: str = None, tag: s
     if tag:
         conditions.append("EXISTS (SELECT 1 FROM post_tags pt WHERE pt.post_id = p.id AND pt.tag = %s)")
         params.append(tag.lower().strip())
+    if author_id:
+        conditions.append("p.author_id = %s")
+        params.append(author_id)
     
     where = f"WHERE {' AND '.join(conditions)}" if conditions else ""
     params.append(limit)
